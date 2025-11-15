@@ -1,0 +1,290 @@
+# Cursor AI Rules for New Project
+
+## Language & Communication
+
+- **Code & Comments**: All code (variables, functions, comments, UI strings) must be in English
+- **Chat Responses**: All chat responses must be in Georgian
+- **Documentation**: Markdown files can be in Georgian or English, but consistent
+- **No Georgian in Code/SQL/Filenames**: Code, file names and SQL must not contain Georgian characters
+
+## Security
+
+- **Sensitive Data**: No API keys, secrets, or personal info in code
+- **Environment Variables**: Use `.env` files for all secrets (`.env.example` for template)
+- **RLS Policies**: Always use Row Level Security for database tables
+- **No Hardcoded Secrets**: Never hardcode API keys or secrets
+- **No Secrets in NEXT_PUBLIC_***: Never expose secrets in `NEXT_PUBLIC_*` environment variables
+
+## Supabase Rules (CRITICAL)
+
+### Migration Requirements
+
+- **All Database Changes Must Be Migrations**: Any Supabase change (table, field, index, RLS policy, view, function, trigger) must be converted to one or more SQL migration files in `supabase/migrations/*.sql`
+- **No Schema Changes Without SQL**: You do NOT have permission to change schema "for purposes" only in Prisma/TypeScript without SQL
+- **Never Assume Migrations Ran**: Never assume "previous migrations already ran on Supabase" - SQL is only run manually in Supabase Dashboard by the user
+- **Migration File Naming**: Use format `YYYYMMDD_description.sql` (e.g., `20250110_add_branch_paths.sql`)
+- **Migration Sequence Numbers**: If multiple migrations on the same day, use format `YYYYMMDD_NN_description.sql` where NN is a sequence number (01, 02, 03, etc.)
+  - Example: `20250115_01_add_profile_creation_trigger.sql` (first migration of the day)
+  - Example: `20250115_02_add_storage_bucket_and_policies.sql` (second migration of the day)
+- **Never Duplicate Sequence Numbers**: Always check existing migration files in `supabase/migrations/` to ensure sequence numbers are unique and in correct order
+- **Migration Order**: Migrations are executed in chronological order by filename, so sequence numbers ensure correct execution order for same-day migrations
+
+### 3-Step Migration Procedure (ALWAYS)
+
+For every database change task, you MUST follow this exact 3-step procedure:
+
+#### 1. MIGRATION_PLAN (Text Description)
+
+- What table/field/policy/index/view/function are we adding/changing/removing?
+- What migration file name should be created? (e.g., `20250110_add_branch_paths.sql` or `20250115_02_add_storage_bucket.sql` if multiple migrations on same day)
+- Check existing migrations in `supabase/migrations/` to determine correct sequence number
+- Why is this change needed?
+
+#### 2. SQL_MIGRATION (Complete SQL File)
+
+- One complete SQL file ready for Supabase SQL Editor
+- Must be idempotent - second run should not break anything (use `CREATE TABLE IF NOT EXISTS`, `DROP TABLE IF EXISTS`, etc.)
+- RLS policies must use `do $$ ... end $$;` block syntax
+- Functions must use `do $$ ... end $$;` block syntax
+- Include all necessary indexes, constraints, triggers
+- File path: `supabase/migrations/YYYYMMDD_description.sql` or `supabase/migrations/YYYYMMDD_NN_description.sql` if multiple migrations on same day
+- Always check existing migration files to ensure unique sequence numbers
+
+#### 3. VERIFICATION (SQL Queries/Instructions)
+
+- 2-3 verification SQL queries or instructions
+- How to verify the migration ran correctly?
+- What should the user check in Supabase Dashboard?
+- Example queries to test the new/changed functionality
+
+### What Cursor Does NOT Do
+
+- ❌ **Never runs SQL automatically** - Never write "run this migration now" or attempt to execute SQL
+- ❌ **Only provides text** - Only supply the SQL migration file as text, never execute it
+- ❌ **Never modifies existing migrations** - Never change existing migration files unless explicitly asked to "refactor this specific file"
+- ❌ **Never assumes migrations ran** - Always provide complete, idempotent SQL that can be run multiple times safely
+- ❌ **Never create duplicate migrations** - If a migration was already sent to Supabase, create a NEW migration file to update/fix it, don't modify the existing one
+
+### Updating Existing Migrations
+
+**CRITICAL**: If a migration was already sent to Supabase and needs to be updated:
+
+1. **DO NOT modify the existing migration file** - It may have already been executed
+2. **Create a NEW migration file** with a new date/sequence number
+3. **The new migration should:**
+   - Use `DROP IF EXISTS` / `CREATE OR REPLACE` to safely update existing objects
+   - Be idempotent (safe to run multiple times)
+   - Not break existing migrations or data
+   - Include verification queries to check current state before updating
+
+**Example**: If `20250115_01_add_profile_trigger.sql` was already sent and needs fixing:
+- Create `20250115_03_fix_profile_trigger.sql` (new sequence number)
+- Use `DROP FUNCTION IF EXISTS` before recreating
+- Verify existing state first
+
+### Checking Supabase State
+
+**If there's uncertainty about what exists in Supabase:**
+
+1. **User provides SQL query** - User will send specific SQL code to run in Supabase Dashboard
+2. **User provides results** - User will send back the query results
+3. **Analyze results** - Check what migrations/policies/tables/functions exist
+4. **Create appropriate migration** - Based on actual state, create new migration that:
+   - Doesn't duplicate existing objects
+   - Updates only what needs updating
+   - Maintains correct order and dependencies
+
+**Example queries user might provide:**
+- `SELECT * FROM pg_migrations;` - Check applied migrations
+- `\df` - List functions
+- `\dt` - List tables
+- `SELECT * FROM pg_policies;` - Check RLS policies
+- `SELECT * FROM storage.buckets;` - Check storage buckets
+
+### RLS Policies
+
+- **Always use block syntax**: RLS policies must always use `do $$ ... end $$;` style (block syntax)
+- **Idempotent**: Use `DROP POLICY IF EXISTS` before `CREATE POLICY`
+- **Test policies**: Include verification queries for RLS policies
+
+### Database Schema Rules
+
+- **Idempotent migrations**: All migrations must be idempotent (safe to run multiple times)
+- **Cascade deletes**: Use `ON DELETE CASCADE` for foreign keys where appropriate
+- **Indexes**: Add indexes for frequently queried columns (foreign keys, search fields)
+- **Timestamps**: Use `TIMESTAMPTZ DEFAULT NOW()` for `created_at` and `updated_at`
+- **UUID primary keys**: Use `UUID PRIMARY KEY DEFAULT gen_random_uuid()` for new tables
+- **Check constraints**: Use CHECK constraints for enum-like fields
+
+### No Secrets in Public
+
+- **Never expose secrets**: Never expose secrets in `NEXT_PUBLIC_*` environment variables
+- **Use environment variables**: Use `.env` files for all secrets (`.env.example` for template)
+
+## File Structure
+
+- **Strict Structure**: Follow existing structure (src/app, src/components, etc.)
+- **Git**: All changes must be committed with descriptive messages
+- **Small Commits**: Atomic, small changes - no large commits
+- **.gitignore**: Always check .gitignore before committing
+
+## Code Quality
+
+- **TypeScript**: All code must be TypeScript (no `any` types unless absolutely necessary)
+- **Error Handling**: All async operations must have try/catch
+- **Testing**: All new components/functions must be testable
+- **Consistency**: Follow design system strictly
+- **Linting**: Run linter before committing
+
+## Priority Order (CRITICAL)
+
+1. **Follow `docs/PROJECT_PRIORITIES.md`**: Only build features in priority order
+2. **Phase 1 First**: Complete Phase 1 before starting Phase 2
+3. **One Feature at a Time**: Complete one feature fully before starting another
+4. **Essential Only**: Don't add features not in priorities document
+
+## Component Rules
+
+- **Reusable Components**: Create reusable components in `src/components/`
+- **Server vs Client**: Use Server Components by default, Client only for interactivity
+- **Naming**: PascalCase for components, camelCase for variables
+- **Props**: Always use TypeScript interfaces
+- **No `any` Types**: Use proper types for all props and data
+
+## Documentation
+
+- **Update Docs**: Always update relevant docs when adding features
+- **Code Comments**: Add comments for complex logic
+- **README**: Keep README.md updated with setup instructions
+- **Feature Docs**: Document each feature in `docs/features/`
+
+## Error Handling
+
+- **User-Friendly**: All errors must show user-friendly messages
+- **Try/Catch**: All async operations must have try/catch
+- **Error Boundaries**: Use error boundaries for React components
+- **Logging**: Log errors for debugging (but not in production)
+
+## Testing
+
+- **Test as You Go**: Don't wait until the end to test
+- **Component Tests**: Test components with React Testing Library
+- **Integration Tests**: Test critical flows
+- **E2E Tests**: Test user journeys
+
+## Performance
+
+- **Optimize Images**: Use Next.js Image component
+- **Code Splitting**: Use dynamic imports for large components
+- **Lazy Loading**: Lazy load components when possible
+- **Bundle Size**: Keep bundle size small
+
+## Accessibility
+
+- **Semantic HTML**: Use proper HTML elements
+- **ARIA Labels**: Add ARIA labels for screen readers
+- **Keyboard Navigation**: Ensure keyboard accessibility
+- **Color Contrast**: Ensure sufficient color contrast
+
+## Before Starting Any Task
+
+1. ✅ Check `docs/PROJECT_PRIORITIES.md` - Is this feature in priorities?
+2. ✅ Check `docs/DOCUMENTATION_STRUCTURE.md` - Do I need to document this?
+3. ✅ Check `docs/ESSENTIAL_FEATURES.md` and `docs/PROJECT_OVERVIEW.md` - Keep BranchFeed concept (branching stories)
+4. ✅ Check existing code - Is there similar code I can reuse?
+5. ✅ Plan the implementation - What components/functions do I need?
+
+## When Completing a Task
+
+1. ✅ Code is written and tested
+2. ✅ TypeScript errors are fixed
+3. ✅ Linting passes
+4. ✅ Documentation is updated
+5. ✅ Feature works in browser
+6. ✅ Error handling is implemented
+7. ✅ Loading states are added (if needed)
+
+## What NOT to Do
+
+- ❌ Don't add features not in `PROJECT_PRIORITIES.md`
+- ❌ Don't skip Phase 1 to work on Phase 2
+- ❌ Don't use `any` types
+- ❌ Don't commit without testing
+- ❌ Don't skip documentation
+- ❌ Don't hardcode secrets
+- ❌ Don't ignore TypeScript errors
+- ❌ Don't ignore linting errors
+
+## Prompt Template
+
+Always start prompts with:
+
+```
+Follow .cursorrules, docs/PROJECT_PRIORITIES.md, and docs/DOCUMENTATION_STRUCTURE.md strictly.
+
+[Your request here]
+```
+
+### Supabase Database Task Prompt Template
+
+When requesting a new Supabase database change, use this template (you can copy-paste):
+
+```
+ახალი ტასკია Supabase-ზე. აუცილებლად დაიცავი ჩვენი Supabase პროტოკოლი:
+
+– ჯერ გამიკეთე MIGRATION_PLAN ტექსტურად;
+– მერე ერთი SQL_MIGRATION ფაილი supabase/migrations/…sql–ით;
+– ბოლოს VERIFICATION – რა SQL უნდა გავუშვა Supabase-ში.
+
+კოდი და SQL წერე მხოლოდ ინგლისურად, ახსნები არ გინდა, მარტო ეს სამი ბლოკი.
+```
+
+**English version** (for reference):
+
+```
+New task for Supabase. You must follow our Supabase protocol:
+
+– First, create MIGRATION_PLAN as text;
+– Then, one SQL_MIGRATION file with supabase/migrations/…sql;
+– Finally, VERIFICATION – what SQL should I run in Supabase.
+
+Write code and SQL only in English, no explanations needed, only these three blocks.
+```
+
+### Updating Existing Migration Template
+
+When updating a migration that was already sent to Supabase:
+
+```
+ეს მიგრაცია უკვე გაგზავნილია Supabase-ზე, მაგრამ უნდა განახლდეს:
+
+– შეამოწმე არსებული migration: supabase/migrations/YYYYMMDD_NN_old_name.sql
+– შექმენი ახალი migration file: supabase/migrations/YYYYMMDD_NN_new_name.sql
+– ახალი migration უნდა იყოს idempotent და არ დააზიანოს არსებული migrations
+– უნდა გამოიყენოს DROP IF EXISTS / CREATE OR REPLACE
+– უნდა შეამოწმოს არსებული state-ი სანამ update-ს გააკეთებს
+```
+
+### Checking Supabase State Template
+
+When there's uncertainty about Supabase state:
+
+```
+არ ვიცი რა migrations/policies/tables არსებობს Supabase-ში. 
+
+გამიგზავნე SQL query რომელიც უნდა გავუშვა Supabase Dashboard → SQL Editor-ში, 
+რომ შევამოწმო არსებული state-ი. შემდეგ გამოგიგზავნი შედეგებს.
+```
+
+**After user provides results:**
+
+```
+მოცემულია Supabase-ის state-ის შედეგები:
+
+[ჩასვი შედეგები აქ]
+
+ახლა შექმენი შესაბამისი migration, რომელიც:
+– არ დუბლირებს არსებულ objects-ს
+– განაახლებს მხოლოდ იმას რაც საჭიროა
+– ინარჩუნებს სწორ order-ს და dependencies-ს
+```

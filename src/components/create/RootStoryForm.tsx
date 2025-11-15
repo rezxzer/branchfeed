@@ -1,0 +1,186 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import { useTranslation } from '@/hooks/useTranslation'
+import { Input } from '@/components/ui/Input'
+import { Textarea } from '@/components/ui/Textarea'
+import { Button } from '@/components/ui/Button'
+import type { RootStoryData } from '@/types/create'
+
+interface RootStoryFormProps {
+  onSubmit: (data: RootStoryData) => void
+  initialData?: RootStoryData | null
+}
+
+export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
+  const { t } = useTranslation()
+  const [title, setTitle] = useState(initialData?.title || '')
+  const [description, setDescription] = useState(initialData?.description || '')
+  const [media, setMedia] = useState<File | null>(initialData?.media || null)
+  const [mediaPreview, setMediaPreview] = useState<string | null>(
+    initialData?.mediaUrl || null
+  )
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [mediaType, setMediaType] = useState<'image' | 'video' | undefined>(
+    initialData?.mediaType
+  )
+
+  useEffect(() => {
+    if (media) {
+      const url = URL.createObjectURL(media)
+      setMediaPreview(url)
+      setMediaType(media.type.startsWith('image/') ? 'image' : 'video')
+      return () => URL.revokeObjectURL(url)
+    }
+  }, [media])
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Basic validation
+      const maxSize = 10 * 1024 * 1024 // 10MB
+      if (file.size > maxSize) {
+        setErrors({ 
+          media: t('createStory.errors.fileTooLarge') || `File size must be less than 10MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB` 
+        })
+        return
+      }
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm']
+      if (!validTypes.includes(file.type)) {
+        setErrors({ 
+          media: t('createStory.errors.invalidFileType') || 'Please upload an image (JPEG, PNG, WebP) or video (MP4, WebM) file.' 
+        })
+        return
+      }
+      setMedia(file)
+      setErrors({ ...errors, media: '' })
+    }
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const newErrors: Record<string, string> = {}
+
+    if (!title.trim()) {
+      newErrors.title = t('createStory.errors.titleRequired') || 'Story title is required'
+    }
+    if (!media && !mediaPreview) {
+      newErrors.media = t('createStory.errors.mediaRequired') || 'Please upload an image or video for your story'
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors)
+      return
+    }
+
+    onSubmit({
+      title: title.trim(),
+      description: description.trim() || undefined,
+      media,
+      mediaUrl: mediaPreview || undefined,
+      mediaType,
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-level-2 border border-gray-700/50 p-6">
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {t('createStory.steps.root')}
+        </h2>
+
+        {/* Title */}
+        <div className="mb-6">
+          <Input
+            id="story-title"
+            type="text"
+            label={t('createStory.root.title')}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value)
+              if (errors.title) setErrors({ ...errors, title: '' })
+            }}
+            error={errors.title}
+            required
+            placeholder="Enter story title..."
+          />
+        </div>
+
+        {/* Description */}
+        <div className="mb-6">
+          <Textarea
+            id="story-description"
+            label={t('createStory.root.description')}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            placeholder="Enter story description (optional)..."
+          />
+        </div>
+
+        {/* Media Upload */}
+        <div className="mb-6">
+          <label
+            htmlFor="story-media"
+            className="block text-sm font-medium text-gray-300 mb-2"
+          >
+            {t('createStory.root.media')}
+            <span className="text-error ml-1">*</span>
+          </label>
+          <input
+            id="story-media"
+            type="file"
+            accept="image/*,video/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
+          <label
+            htmlFor="story-media"
+            className="cursor-pointer inline-block px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors ease-smooth"
+          >
+            {media ? t('createStory.root.media') : t('createStory.root.media')}
+          </label>
+          {media && (
+            <span className="ml-3 text-sm text-gray-300">{media.name}</span>
+          )}
+          {errors.media && (
+            <p className="mt-1 text-sm text-error">{errors.media}</p>
+          )}
+        </div>
+
+        {/* Media Preview */}
+        {mediaPreview && (
+          <div className="mb-6">
+            <p className="text-sm font-medium text-gray-300 mb-2">Preview:</p>
+            <div className="relative aspect-[9/16] w-full max-w-xs mx-auto rounded-lg overflow-hidden bg-gray-700">
+              {mediaType === 'video' ? (
+                <video
+                  src={mediaPreview}
+                  className="w-full h-full object-cover"
+                  controls
+                />
+              ) : (
+                <Image
+                  src={mediaPreview}
+                  alt="Preview"
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <Button type="submit" variant="primary" size="lg" fullWidth>
+          {t('createStory.next')}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
