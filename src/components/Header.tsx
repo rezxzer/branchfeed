@@ -45,29 +45,44 @@ export function Header() {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            {!isAuthPage && isAuthenticated && (
+            {!isAuthPage && (
               <>
+                {isAuthenticated && (
+                  <>
+                    <Link
+                      href="/feed"
+                      className={cn(
+                        'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                        pathname === '/feed'
+                          ? 'text-brand-cyan bg-brand-iris/20'
+                          : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                      )}
+                    >
+                      {t('header.feed')}
+                    </Link>
+                    <Link
+                      href="/create"
+                      className={cn(
+                        'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                        pathname === '/create'
+                          ? 'text-brand-cyan bg-brand-iris/20'
+                          : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                      )}
+                    >
+                      {t('header.create')}
+                    </Link>
+                  </>
+                )}
                 <Link
-                  href="/feed"
+                  href="/about"
                   className={cn(
                     'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    pathname === '/feed'
+                    pathname === '/about'
                       ? 'text-brand-cyan bg-brand-iris/20'
                       : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
                   )}
                 >
-                  {t('header.feed')}
-                </Link>
-                <Link
-                  href="/create"
-                  className={cn(
-                    'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    pathname === '/create'
-                      ? 'text-brand-cyan bg-brand-iris/20'
-                      : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
-                  )}
-                >
-                  {t('header.create')}
+                  About
                 </Link>
               </>
             )}
@@ -187,53 +202,69 @@ export function Header() {
         </div>
 
         {/* Mobile Menu */}
-        {mobileMenuOpen && !isAuthPage && isAuthenticated && (
+        {mobileMenuOpen && !isAuthPage && (
           <div className="md:hidden border-t border-gray-700/50 py-4">
             <div className="flex flex-col space-y-2">
+              {isAuthenticated && (
+                <>
+                  <Link
+                    href="/feed"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      pathname === '/feed'
+                        ? 'text-brand-cyan bg-brand-iris/20'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                    )}
+                  >
+                    {t('header.feed')}
+                  </Link>
+                  <Link
+                    href="/create"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      pathname === '/create'
+                        ? 'text-brand-cyan bg-brand-iris/20'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                    )}
+                  >
+                    {t('header.create')}
+                  </Link>
+                  <Link
+                    href="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                  >
+                    {t('header.profile')}
+                  </Link>
+                  <Link
+                    href="/settings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                  >
+                    {t('header.settings')}
+                  </Link>
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                  >
+                    {t('header.signOut')}
+                  </button>
+                </>
+              )}
               <Link
-                href="/feed"
+                href="/about"
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
                   'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                  pathname === '/feed'
+                  pathname === '/about'
                     ? 'text-brand-cyan bg-brand-iris/20'
                     : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
                 )}
               >
-                {t('header.feed')}
+                About
               </Link>
-              <Link
-                href="/create"
-                onClick={() => setMobileMenuOpen(false)}
-                className={cn(
-                  'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                  pathname === '/create'
-                    ? 'text-brand-cyan bg-brand-iris/20'
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
-                )}
-              >
-                {t('header.create')}
-              </Link>
-              <Link
-                href="/profile"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
-              >
-                {t('header.profile')}
-              </Link>
-              <Link
-                href="/settings"
-                onClick={() => setMobileMenuOpen(false)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
-              >
-                {t('header.settings')}
-              </Link>
-              <button
-                onClick={handleSignOut}
-                className="w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors"
-              >
-                {t('header.signOut')}
-              </button>
             </div>
           </div>
         )}
