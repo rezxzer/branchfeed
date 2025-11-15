@@ -18,6 +18,7 @@ import { useStory } from '@/hooks/useStory'
 import { usePathTracking } from '@/hooks/usePathTracking'
 import { incrementStoryViews } from '@/lib/stories'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { ShareStoryButton } from './ShareStoryButton'
 import Link from 'next/link'
 
 interface StoryDetailPageClientProps {
@@ -152,13 +153,20 @@ export function StoryDetailPageClient({
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <Link
-                href={`/profile/${story.author_id}`}
-                className="block font-semibold text-white hover:text-brand-cyan transition-colors ease-smooth text-sm sm:text-base"
-              >
-                {story.author?.username || 'Unknown'}
-              </Link>
-              <h1 className="text-base sm:text-lg lg:text-xl font-bold text-white break-words">{story.title}</h1>
+              <div className="flex items-start justify-between gap-3 mb-1">
+                <div className="flex-1 min-w-0">
+                  <Link
+                    href={`/profile/${story.author_id}`}
+                    className="block font-semibold text-white hover:text-brand-cyan transition-colors ease-smooth text-sm sm:text-base"
+                  >
+                    {story.author?.username || 'Unknown'}
+                  </Link>
+                  <h1 className="text-base sm:text-lg lg:text-xl font-bold text-white break-words">{story.title}</h1>
+                </div>
+                <div className="flex-shrink-0">
+                  <ShareStoryButton storyId={storyId} />
+                </div>
+              </div>
             </div>
           </div>
           {story.description && (
