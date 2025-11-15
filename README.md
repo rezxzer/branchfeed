@@ -49,6 +49,14 @@ Production: https://branchfeed.vercel.app
 
 6. Open [http://localhost:3000](http://localhost:3000) in your browser
 
+## Screenshots
+
+### Feed
+
+A look at the main branching stories feed:
+
+![BranchFeed feed screenshot](docs/screenshots/branchfeed-feed.png)
+
 ## Project Structure
 
 ```
