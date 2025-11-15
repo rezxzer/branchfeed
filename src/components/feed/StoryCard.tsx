@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
 import { Card } from '@/components/ui/Card'
 import { MediaDisplay } from '@/components/MediaDisplay'
+import { ShareStoryButton } from '@/components/story/ShareStoryButton'
 import type { Story } from '@/types'
 import Link from 'next/link'
 
@@ -105,12 +106,17 @@ export function StoryCard({ story }: StoryCardProps) {
             </span>
           </Link>
 
-          <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
-            {story.branches_count !== undefined && (
-              <span>{story.branches_count} {t('feed.stats.paths')}</span>
-            )}
-            <span>{story.likes_count} {t('feed.stats.likes')}</span>
-            <span>{story.views_count} {t('feed.stats.views')}</span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
+              {story.branches_count !== undefined && (
+                <span>{story.branches_count} {t('feed.stats.paths')}</span>
+              )}
+              <span>{story.likes_count} {t('feed.stats.likes')}</span>
+              <span>{story.views_count} {t('feed.stats.views')}</span>
+            </div>
+            <div onClick={(e) => e.stopPropagation()}>
+              <ShareStoryButton storyId={story.id} className="scale-90 sm:scale-100" />
+            </div>
           </div>
         </div>
       </div>

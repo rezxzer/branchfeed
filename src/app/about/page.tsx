@@ -1,7 +1,31 @@
-export const metadata = {
-  title: "About | BranchFeed",
+import type { Metadata } from 'next'
+import { siteConfig } from '@/config/site'
+
+export const metadata: Metadata = {
+  title: 'About | BranchFeed',
   description:
-    "Learn what BranchFeed is, how interactive branching stories work, and how the platform was built.",
+    'Learn what BranchFeed is, how interactive branching stories work, and how the platform was built.',
+  openGraph: {
+    type: 'website',
+    title: 'About | BranchFeed',
+    description: 'Learn what BranchFeed is, how interactive branching stories work, and how the platform was built.',
+    url: `${siteConfig.url}/about`,
+    siteName: siteConfig.name,
+    images: [
+      {
+        url: siteConfig.ogImage,
+        width: 1200,
+        height: 630,
+        alt: 'BranchFeed – About',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'About | BranchFeed',
+    description: 'Learn what BranchFeed is, how interactive branching stories work, and how the platform was built.',
+    images: [siteConfig.ogImage],
+  },
 };
 
 export default function AboutPage() {

@@ -86,6 +86,9 @@ src/
 - 💬 **Comments & discussions**  
   Leave feedback on stories and read what other viewers think.
 
+- 🔗 **Share stories**  
+  Share stories or specific paths with a single click from the feed or story detail page.
+
 - 🌙 **Dark, focused UI**  
   Clean, distraction-free dark theme designed for watching stories comfortably.
 
