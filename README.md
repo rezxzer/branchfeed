@@ -62,6 +62,76 @@ src/
 └── types/           # TypeScript type definitions
 ```
 
+## Features
+
+### For viewers
+
+- 🎬 **Interactive branching stories**  
+  Watch video stories where each step offers A/B choices and follow different narrative paths.
+
+- 🧭 **Path-aware story player**  
+  See where you are in the story, how many paths exist, and which branch you are currently exploring.
+
+- 📰 **Modern feed experience**  
+  Scroll through a card-based feed of stories with covers, titles, stats (paths, views, likes) and author info.
+
+- 💬 **Comments & discussions**  
+  Leave feedback on stories and read what other viewers think.
+
+- 🌙 **Dark, focused UI**  
+  Clean, distraction-free dark theme designed for watching stories comfortably.
+
+---
+
+### For creators
+
+- 🧱 **Branching story builder**  
+  Create a root story and add multiple branches with different choices and outcomes.
+
+- 📂 **Video upload & storage**  
+  Upload story media to Supabase Storage and re-use it across branches.
+
+- 👁️ **Live preview**  
+  See how your branching structure and story cards will look before publishing.
+
+- 📊 **Story stats**  
+  Track basic engagement such as paths, views and likes for each story.
+
+- 🌍 **Multilingual-ready**  
+  Built with an i18n hook and language switcher so the UI can support multiple languages.
+
+---
+
+### Accounts & settings
+
+- 🔐 **Supabase Auth**  
+  Email/password authentication with protected routes for creating and managing your stories.
+
+- 👤 **Profile page**  
+  View your profile, see your published stories and basic stats.
+
+- ⚙️ **Settings**  
+  Update profile details and language preferences from a dedicated settings page.
+
+---
+
+### Under the hood
+
+- ⚛️ **Next.js 15 (App Router) + TypeScript**  
+  Fully typed React app with server components and modern routing.
+
+- 🗄️ **Supabase PostgreSQL**  
+  Hosted Postgres database for stories, branches, users and interactions.
+
+- 📦 **Supabase Storage**  
+  File storage for story media, wired into the create flow.
+
+- 🎨 **Tailwind CSS design system**  
+  Reusable components for cards, buttons, layouts and skeleton states.
+
+- ☁️ **Vercel deployment**  
+  CI/CD from GitHub → Vercel, with production build already live.
+
 ## Documentation
 
 ### Core Documentation
