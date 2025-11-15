@@ -131,3 +131,15 @@ See `docs/DEPLOYMENT.md` for detailed deployment guide.
 
 See `docs/PROJECT_PRIORITIES.md` for detailed feature list and `docs/PROJECT_STATUS.md` for current status.
 
+## About the Creator
+
+Hi, I'm Rezi — a self-taught developer from Georgia learning modern web development and product design step by step.
+
+BranchFeed is my first public production project. I'm using it to practice:
+
+- shipping real features end-to-end,
+- working with modern tools (Next.js, TypeScript, Supabase, Vercel),
+- writing clear documentation and project structure.
+
+Feedback, issues and suggestions are always welcome via GitHub Issues.
+
