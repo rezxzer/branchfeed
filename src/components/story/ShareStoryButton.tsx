@@ -3,13 +3,15 @@
 import { useState } from 'react'
 import { useToast } from '@/components/ui/toast'
 import { cn } from '@/lib/utils'
+import { encodePath } from '@/lib/pathSharing'
 
 interface ShareStoryButtonProps {
   storyId: string
+  path?: ('A' | 'B')[]
   className?: string
 }
 
-export function ShareStoryButton({ storyId, className }: ShareStoryButtonProps) {
+export function ShareStoryButton({ storyId, path, className }: ShareStoryButtonProps) {
   const { showToast } = useToast()
   const [isSharing, setIsSharing] = useState(false)
 
@@ -17,8 +19,16 @@ export function ShareStoryButton({ storyId, className }: ShareStoryButtonProps) 
     try {
       setIsSharing(true)
 
-      // Create share URL using current origin
-      const shareUrl = `${window.location.origin}/story/${storyId}`
+      // Build base URL
+      let shareUrl = `${window.location.origin}/story/${storyId}`
+      
+      // Add path parameter if path exists and is not empty
+      if (path && path.length > 0) {
+        const encodedPath = encodePath(path)
+        if (encodedPath) {
+          shareUrl += `?path=${encodedPath}`
+        }
+      }
 
       // Try to copy to clipboard
       if (typeof navigator !== 'undefined' && 'clipboard' in navigator) {
@@ -50,8 +60,14 @@ export function ShareStoryButton({ storyId, className }: ShareStoryButtonProps) 
     } catch (err) {
       console.error('Error copying link:', err)
       // Fallback: show prompt
-      const shareUrl = `${window.location.origin}/story/${storyId}`
-      prompt('Copy this link:', shareUrl)
+      let fallbackUrl = `${window.location.origin}/story/${storyId}`
+      if (path && path.length > 0) {
+        const encodedPath = encodePath(path)
+        if (encodedPath) {
+          fallbackUrl += `?path=${encodedPath}`
+        }
+      }
+      prompt('Copy this link:', fallbackUrl)
       showToast('Link ready to copy', 'info')
     } finally {
       setIsSharing(false)

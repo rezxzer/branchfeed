@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -19,6 +19,8 @@ import { usePathTracking } from '@/hooks/usePathTracking'
 import { incrementStoryViews } from '@/lib/stories'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { ShareStoryButton } from './ShareStoryButton'
+import { encodePath, decodePath } from '@/lib/pathSharing'
+import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 
 interface StoryDetailPageClientProps {
@@ -29,6 +31,7 @@ export function StoryDetailPageClient({
   storyId,
 }: StoryDetailPageClientProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const { t } = useTranslation()
   const { currentPath, currentDepth, makeChoice, loadExistingPath, setPathFromUrl } =
@@ -38,14 +41,19 @@ export function StoryDetailPageClient({
     currentPath
   )
 
-  // Parse path from URL query parameter
+  // Track if this is the initial mount to avoid updating URL on initial load
+  const isInitialMount = useRef(true)
+
+  // Parse path from URL query parameter on initial load
   useEffect(() => {
     const pathParam = searchParams.get('path')
     
     if (pathParam) {
-      // Parse path from URL: "A,B,A" -> ['A', 'B', 'A']
-      const pathFromUrl = pathParam
-        .split(',')
+      // Decode path from URL using utility function
+      const decodedPath = decodePath(pathParam)
+      
+      // Convert to ('A' | 'B')[] and validate
+      const pathFromUrl = decodedPath
         .map((p) => p.trim().toUpperCase())
         .filter((p) => p === 'A' || p === 'B') as ('A' | 'B')[]
       
@@ -67,12 +75,50 @@ export function StoryDetailPageClient({
         }
       }
     } else {
-      // No path in URL - load existing path from database/localStorage only if current path is not empty
+      // No path in URL - load existing path from database/localStorage only if current path is empty
       if (currentPath.length === 0) {
         loadExistingPath()
       }
     }
-  }, [searchParams, story, currentPath, loadExistingPath, setPathFromUrl])
+    
+    // Mark initial mount as complete
+    isInitialMount.current = false
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Only run on mount to read initial URL
+
+  // Sync URL with current path (update URL when path changes)
+  useEffect(() => {
+    // Skip if this is the initial mount (URL reading happens in the other useEffect)
+    if (isInitialMount.current) {
+      return
+    }
+    
+    // We only want to update URL when path changes after user interaction
+    const currentPathParam = searchParams.get('path')
+    const currentPathEncoded = encodePath(currentPath)
+    
+    // Only update URL if path has actually changed
+    if (currentPathParam !== currentPathEncoded) {
+      const params = new URLSearchParams(searchParams.toString())
+      
+      if (currentPath.length > 0) {
+        // Add or update path parameter
+        params.set('path', currentPathEncoded)
+      } else {
+        // Remove path parameter if path is empty
+        params.delete('path')
+      }
+      
+      // Build new URL
+      const newQuery = params.toString()
+      const newUrl = newQuery 
+        ? `${pathname}?${newQuery}`
+        : pathname
+      
+      // Update URL without adding to history (replace instead of push)
+      router.replace(newUrl, { scroll: false })
+    }
+  }, [currentPath, pathname, router, searchParams])
 
   // Increment view count when story is loaded
   useEffect(() => {
@@ -89,13 +135,9 @@ export function StoryDetailPageClient({
     // This will trigger useStory to reload with new path (loading state handled by useStory)
     await makeChoice(choice)
     
-    // Update URL with new path (no page reload, just URL update)
-    const newPath = [...currentPath, choice]
-    const pathParam = newPath.join(',')
-    router.push(`/story/${storyId}?path=${pathParam}`, { scroll: false })
-    
     // Scroll to top of story player section for better UX
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    // Note: URL update is handled by the useEffect below when currentPath changes
   }
 
   if (loading && !story) {
@@ -164,7 +206,7 @@ export function StoryDetailPageClient({
                   <h1 className="text-base sm:text-lg lg:text-xl font-bold text-white break-words">{story.title}</h1>
                 </div>
                 <div className="flex-shrink-0">
-                  <ShareStoryButton storyId={storyId} />
+                  <ShareStoryButton storyId={storyId} path={currentPath} />
                 </div>
               </div>
             </div>
