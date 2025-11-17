@@ -295,6 +295,28 @@ A feature is "Done" when:
 
 ---
 
+## ⏭️ Phase 5: Post-MVP Enhancements (Future)
+
+**Status**: Planning Phase  
+**See `docs/PHASE_5_PLAN.md` for detailed Phase 5 plan.**
+
+### Planned Features
+
+- ⏳ Search functionality
+- ⏳ Story editing/deletion
+- ⏳ Comment replies
+- ⏳ Follow system
+- ⏳ Notifications
+- ⏳ Trending stories
+- ⏳ Story recommendations
+- ⏳ Bookmarks/Favorites
+- ⏳ Story analytics
+- ⏳ Performance optimizations
+
+**Priority**: Based on user feedback and actual usage
+
+---
+
 ## 📝 Notes
 
 - **Start with Phase 1**: Don't skip to Phase 2 until Phase 1 is complete
