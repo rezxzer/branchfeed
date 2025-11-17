@@ -22,7 +22,8 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
-  const STRONG_PASSWORD = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/
+  // Minimum password length (simplified requirements)
+  const MIN_PASSWORD_LENGTH = 6
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -43,13 +44,11 @@ export default function SignUpPage() {
       newErrors.email = t('auth.errors.invalidEmail')
     }
 
-    // Password validation
+    // Password validation (simplified - only minimum length)
     if (!password) {
       newErrors.password = t('auth.errors.passwordRequired')
-    } else if (password.length < 8) {
-      newErrors.password = t('auth.errors.weakPassword')
-    } else if (!STRONG_PASSWORD.test(password)) {
-      newErrors.password = t('auth.errors.weakPassword')
+    } else if (password.length < MIN_PASSWORD_LENGTH) {
+      newErrors.password = t('auth.errors.passwordMinLength') || `Password must be at least ${MIN_PASSWORD_LENGTH} characters`
     }
 
     // Confirm password validation

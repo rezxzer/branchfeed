@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation'
 import type { Metadata } from 'next'
 import { getCurrentUser } from '@/lib/auth'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { ProfilePageClient } from '@/components/profile/ProfilePageClient'
 import { siteConfig } from '@/config/site'
 import type { Profile } from '@/types'
@@ -82,71 +81,40 @@ async function getProfile(userId: string): Promise<Profile | null> {
     .single()
 
   if (error) {
-    // If profile doesn't exist (PGRST116 = no rows returned), try to create it
+    // If profile doesn't exist (PGRST116 = no rows returned)
+    // Profile should be created automatically by database trigger on signup
+    // If profile doesn't exist, try to create it via API (fallback)
     if (error.code === 'PGRST116') {
-      console.warn(`Profile not found for user ID: ${userId}, attempting to create...`)
+      console.warn(`Profile not found for user ID: ${userId}. Profile should be created automatically on signup.`)
       
-      // Use admin client to create profile (bypasses RLS)
-      const adminClient = createAdminSupabaseClient()
-      
-      if (!adminClient) {
-        console.error('Admin client not available, cannot create profile')
-        return null
-      }
-      
-      // Try to get user from auth.users to create profile
-      const { data: authUser, error: authError } = await adminClient.auth.admin.getUserById(userId)
-      
-      let email = ''
-      let defaultUsername = `user_${userId.substring(0, 8)}`
-      
-      if (!authError && authUser?.user) {
-        email = authUser.user.email || ''
-        if (email) {
-          defaultUsername = email.split('@')[0]
+      // Try to create profile manually (only if this is the current user's profile)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && user.id === userId) {
+          // This is the current user's profile, try to create it
+          const defaultUsername = user.email?.split('@')[0] || `user_${user.id.substring(0, 8)}`
+          
+          // Try to create profile with regular client
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: user.id,
+              username: defaultUsername,
+              email: user.email || null,
+              language_preference: 'en',
+            })
+            .select()
+            .single()
+          
+          if (!createError && newProfile) {
+            return newProfile as Profile
+          }
         }
-      }
-      
-      // Check if username already exists and make it unique
-      let finalUsername = defaultUsername
-      let counter = 0
-      let usernameExists = true
-      
-      while (usernameExists && counter < 100) {
-        const { data: existingProfile } = await adminClient
-          .from('profiles')
-          .select('id')
-          .eq('username', finalUsername)
-          .single()
-        
-        if (!existingProfile) {
-          usernameExists = false
-        } else {
-          counter++
-          finalUsername = `${defaultUsername}${counter}`
-        }
-      }
-      
-      // Create profile
-      const { data: newProfile, error: createError } = await adminClient
-        .from('profiles')
-        .insert({
-          id: userId,
-          username: finalUsername,
-          email: email || null,
-          language_preference: 'en',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        } as never)
-        .select()
-        .single()
-      
-      if (createError) {
+      } catch (createError) {
         console.error('Error creating profile:', createError)
-        return null
       }
       
-      return newProfile as Profile
+      return null
     }
     
     // Log error with all available information
