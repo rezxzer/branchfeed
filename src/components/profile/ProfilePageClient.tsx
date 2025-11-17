@@ -7,18 +7,23 @@ import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge'
+import { FollowButton } from './FollowButton'
 import type { Profile, Story } from '@/types'
 
 interface ProfilePageClientProps {
   profile: Profile
   stories: Story[]
   isOwnProfile: boolean
+  followersCount?: number
+  followingCount?: number
 }
 
 export function ProfilePageClient({
   profile,
   stories,
   isOwnProfile,
+  followersCount = 0,
+  followingCount = 0,
 }: ProfilePageClientProps) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -69,7 +74,7 @@ export function ProfilePageClient({
             </div>
 
             {/* Actions */}
-            {isOwnProfile && (
+            {isOwnProfile ? (
               <div className="flex gap-2 w-full sm:w-auto">
                 <Button
                   variant="outline"
@@ -80,12 +85,14 @@ export function ProfilePageClient({
                   {t('header.settings')}
                 </Button>
               </div>
+            ) : (
+              <FollowButton userId={profile.id} />
             )}
           </div>
         </div>
 
         {/* Profile Stats */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-700/50">
             <div className="text-xl sm:text-2xl font-bold text-brand-cyan mb-1">
               {num.format(stories.length)}
@@ -103,6 +110,24 @@ export function ProfilePageClient({
               {num.format(totalViews)}
             </div>
             <div className="text-xs sm:text-sm text-gray-400">Total Views</div>
+          </div>
+          <div 
+            className="bg-gray-800/50 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-700/50 cursor-pointer hover:border-brand-cyan transition-colors"
+            onClick={() => router.push(`/profile/${profile.id}/followers`)}
+          >
+            <div className="text-xl sm:text-2xl font-bold text-brand-cyan mb-1">
+              {num.format(followersCount)}
+            </div>
+            <div className="text-xs sm:text-sm text-gray-400">Followers</div>
+          </div>
+          <div 
+            className="bg-gray-800/50 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-700/50 cursor-pointer hover:border-brand-cyan transition-colors"
+            onClick={() => router.push(`/profile/${profile.id}/following`)}
+          >
+            <div className="text-xl sm:text-2xl font-bold text-brand-cyan mb-1">
+              {num.format(followingCount)}
+            </div>
+            <div className="text-xs sm:text-sm text-gray-400">Following</div>
           </div>
         </div>
 

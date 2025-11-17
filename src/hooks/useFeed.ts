@@ -5,11 +5,12 @@ import { getRootStoriesClient } from '@/lib/stories'
 import type { Story } from '@/types'
 
 export type SortType = 'recent' | 'popular' | 'trending'
+export type FeedType = 'all' | 'following'
 
 const STORIES_PER_PAGE = 10
 const LOAD_MORE_DEBOUNCE_MS = 500
 
-export function useFeed() {
+export function useFeed(feedType: FeedType = 'all') {
   const [stories, setStories] = useState<Story[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -19,13 +20,28 @@ export function useFeed() {
   const lastLoadMoreRef = useRef<number>(0)
 
   const loadFeed = useCallback(
-    async (pageNum: number, sort: SortType) => {
+    async (pageNum: number, sort: SortType, type: FeedType) => {
       try {
         setLoading(true)
         setError(null)
 
-        const offset = (pageNum - 1) * STORIES_PER_PAGE
-        const storiesData = await getRootStoriesClient(STORIES_PER_PAGE, offset, sort)
+        let storiesData: Story[] = []
+        let totalPages = 0
+
+        if (type === 'following') {
+          // Fetch from following feed API
+          const response = await fetch(`/api/feed/following?page=${pageNum}&limit=${STORIES_PER_PAGE}`)
+          if (!response.ok) {
+            throw new Error('Failed to fetch following feed')
+          }
+          const data = await response.json()
+          storiesData = data.stories || []
+          totalPages = data.pagination?.totalPages || 0
+        } else {
+          // Fetch from all stories
+          const offset = (pageNum - 1) * STORIES_PER_PAGE
+          storiesData = await getRootStoriesClient(STORIES_PER_PAGE, offset, sort)
+        }
 
         if (pageNum === 1) {
           setStories(storiesData)
@@ -33,7 +49,7 @@ export function useFeed() {
           setStories((prev) => [...prev, ...storiesData])
         }
 
-        setHasMore(storiesData.length === STORIES_PER_PAGE)
+        setHasMore(type === 'following' ? pageNum < totalPages : storiesData.length === STORIES_PER_PAGE)
       } catch (err) {
         console.error('Error loading feed:', err)
         // Create proper Error object if err is not already an Error
@@ -50,9 +66,9 @@ export function useFeed() {
 
   useEffect(() => {
     setPage(1)
-    loadFeed(1, sortBy)
+    loadFeed(1, sortBy, feedType)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy])
+  }, [sortBy, feedType])
 
   const loadMore = useCallback(() => {
     const now = Date.now()
@@ -61,11 +77,11 @@ export function useFeed() {
 
     if (!loading && hasMore) {
       const nextPage = page + 1
-      loadFeed(nextPage, sortBy)
+      loadFeed(nextPage, sortBy, feedType)
       setPage(nextPage)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, hasMore, page, sortBy])
+  }, [loading, hasMore, page, sortBy, feedType])
 
   return {
     stories,

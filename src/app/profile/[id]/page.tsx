@@ -160,6 +160,31 @@ async function getProfileStories(userId: string) {
   return data || []
 }
 
+async function getFollowCounts(userId: string) {
+  const supabase = await createServerSupabaseClient()
+
+  if (!supabase) {
+    return { followersCount: 0, followingCount: 0 }
+  }
+
+  // Get followers count
+  const { count: followersCount } = await supabase
+    .from('followers')
+    .select('*', { count: 'exact', head: true })
+    .eq('following_id', userId)
+
+  // Get following count
+  const { count: followingCount } = await supabase
+    .from('followers')
+    .select('*', { count: 'exact', head: true })
+    .eq('follower_id', userId)
+
+  return {
+    followersCount: followersCount || 0,
+    followingCount: followingCount || 0,
+  }
+}
+
 export default async function ProfilePage({ params }: ProfilePageProps) {
   const { id } = await params
   const currentUser = await getCurrentUser()
@@ -193,6 +218,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   // Fetch user's stories
   const stories = await getProfileStories(id)
 
+  // Fetch follow counts
+  const { followersCount, followingCount } = await getFollowCounts(id)
+
   const isOwnProfile = currentUser.id === id
 
   return (
@@ -200,6 +228,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       profile={profile}
       stories={stories}
       isOwnProfile={isOwnProfile}
+      followersCount={followersCount}
+      followingCount={followingCount}
     />
   )
 }

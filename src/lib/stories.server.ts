@@ -112,3 +112,65 @@ export async function getRootStories(
   return (data || []) as Story[]
 }
 
+/**
+ * Get stories from followed users (server-side)
+ * Use this in Server Components and Server Actions
+ * @param userId - Current user ID
+ * @param limit - Number of stories to fetch (default: 20)
+ * @param offset - Offset for pagination (default: 0)
+ * @returns Array of root stories from followed users
+ */
+export async function getFollowingStories(
+  userId: string,
+  limit: number = 20,
+  offset: number = 0
+): Promise<Story[]> {
+  const supabase = await createServerSupabaseClient()
+
+  if (!supabase) {
+    console.error('Supabase client is null. Check environment variables.')
+    return []
+  }
+
+  // Get list of users that current user follows
+  const { data: following, error: followingError } = await supabase
+    .from('followers')
+    .select('following_id')
+    .eq('follower_id', userId)
+
+  if (followingError) {
+    console.error('Error fetching following list:', followingError)
+    return []
+  }
+
+  if (!following || following.length === 0) {
+    return []
+  }
+
+  const followingIds = following.map((f) => f.following_id)
+
+  // Get stories from followed users
+  const { data, error } = await supabase
+    .from('stories')
+    .select(
+      `
+      *,
+      author:profiles(
+        id,
+        username,
+        avatar_url
+      )
+    `
+    )
+    .eq('is_root', true)
+    .in('author_id', followingIds)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    console.error('Error fetching following stories:', error)
+    return []
+  }
+
+  return (data || []) as Story[]
+}
