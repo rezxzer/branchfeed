@@ -29,24 +29,44 @@ BEGIN
   END IF;
 END $$;
 
--- Add constraint: parent_comment_id must reference a comment on the same story
--- (This ensures replies are always on the same story as the parent)
+-- Add trigger function to validate parent comment is on the same story
+-- (PostgreSQL doesn't allow subqueries in CHECK constraints)
 DO $$
 BEGIN
+  -- Create trigger function if it doesn't exist
   IF NOT EXISTS (
-    SELECT 1 FROM pg_constraint WHERE conname = 'comments_parent_same_story'
+    SELECT 1 FROM pg_proc WHERE proname = 'validate_comment_parent_story'
   ) THEN
-    ALTER TABLE comments
-    ADD CONSTRAINT comments_parent_same_story
-    CHECK (
-      parent_comment_id IS NULL OR
-      EXISTS (
-        SELECT 1 FROM comments c1, comments c2
-        WHERE c1.id = comments.id
-        AND c2.id = comments.parent_comment_id
-        AND c1.story_id = c2.story_id
-      )
-    );
+    CREATE OR REPLACE FUNCTION validate_comment_parent_story()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      -- If parent_comment_id is NULL, allow (top-level comment)
+      IF NEW.parent_comment_id IS NULL THEN
+        RETURN NEW;
+      END IF;
+
+      -- Check if parent comment exists and is on the same story
+      IF NOT EXISTS (
+        SELECT 1 FROM comments
+        WHERE id = NEW.parent_comment_id
+        AND story_id = NEW.story_id
+      ) THEN
+        RAISE EXCEPTION 'Parent comment must be on the same story';
+      END IF;
+
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql;
+  END IF;
+
+  -- Create trigger if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger WHERE tgname = 'validate_comment_parent_story_trigger'
+  ) THEN
+    CREATE TRIGGER validate_comment_parent_story_trigger
+      BEFORE INSERT OR UPDATE ON comments
+      FOR EACH ROW
+      EXECUTE FUNCTION validate_comment_parent_story();
   END IF;
 END $$;
 
