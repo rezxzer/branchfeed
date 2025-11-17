@@ -41,13 +41,14 @@
 **Status**: ✅ **COMPLETED** (2025-01-15)
 
 #### 1.2 Story Management
-- [ ] Edit story (title, description, media)
-- [ ] Delete story
+- [x] Edit story (title, description)
+- [x] Delete story
 - [ ] Story draft system
 - [ ] Story scheduling (future publish)
 
 **Priority**: 🟡 Medium  
-**Estimated Time**: 1-2 weeks
+**Estimated Time**: 1-2 weeks  
+**Status**: ✅ **PARTIALLY COMPLETED** (2025-01-15) - Edit/Delete implemented, draft/scheduling pending
 
 #### 1.3 Comment System Enhancements
 - [ ] Comment replies (nested comments)

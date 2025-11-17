@@ -20,6 +20,10 @@ import { encodePath, decodePath } from '@/lib/pathSharing'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { useToast } from '@/components/ui/toast'
+import { useAuth } from '@/hooks/useAuth'
+import { EditStoryModal } from './EditStoryModal'
+import { DeleteStoryModal } from './DeleteStoryModal'
+import { Button } from '@/components/ui/Button'
 
 // Lazy load non-critical components for code splitting
 const CommentSection = dynamic(() => import('./CommentSection').then(mod => ({ default: mod.CommentSection })), {
@@ -52,12 +56,20 @@ export function StoryDetailPageClient({
   const searchParams = useSearchParams()
   const { t } = useTranslation()
   const { showToast } = useToast()
+  const { user } = useAuth()
   const { currentPath, currentDepth, makeChoice, loadExistingPath, setPathFromUrl } =
     usePathTracking(storyId)
   const { story, currentNode, loading, error } = useStory(
     storyId,
     currentPath
   )
+
+  // Edit/Delete modals state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
+  // Check if current user is the author
+  const isAuthor = user && story && story.author_id === user.id
 
   // Local state for views count (updated from API)
   const [viewsCount, setViewsCount] = useState<number>(0)
@@ -399,7 +411,27 @@ export function StoryDetailPageClient({
                   </Link>
                   <h1 className="text-base sm:text-lg lg:text-xl font-bold text-white break-words">{story.title}</h1>
                 </div>
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 flex items-center gap-2">
+                  {isAuthor && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="text-xs"
+                      >
+                        ✏️ Edit
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setIsDeleteModalOpen(true)}
+                        className="text-xs"
+                      >
+                        🗑️ Delete
+                      </Button>
+                    </>
+                  )}
                   <ShareStoryButton storyId={storyId} path={currentPath} />
                 </div>
               </div>
@@ -515,6 +547,27 @@ export function StoryDetailPageClient({
           <div className="mt-8">
             <PathViewer storyId={story.id} />
           </div>
+        )}
+
+        {/* Edit/Delete Modals */}
+        {story && (
+          <>
+            <EditStoryModal
+              isOpen={isEditModalOpen}
+              onClose={() => setIsEditModalOpen(false)}
+              story={story}
+              onSuccess={() => {
+                // Reload page to show updated story
+                router.refresh()
+              }}
+            />
+            <DeleteStoryModal
+              isOpen={isDeleteModalOpen}
+              onClose={() => setIsDeleteModalOpen(false)}
+              storyId={story.id}
+              storyTitle={story.title}
+            />
+          </>
         )}
         </div>
       </div>
