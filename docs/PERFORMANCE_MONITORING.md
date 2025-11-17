@@ -1,8 +1,9 @@
-# Performance Monitoring Guide - BranchFeed
+# Performance Monitoring
 
-ეს დოკუმენტაცია აღწერს performance monitoring setup-ს და best practices-ებს production-ში.
-
-**Last Updated**: 2025-01-15
+> Updates (2025-01):
+>
+> - Alerts Setup: Integrate Slack/Email notifications for threshold breaches (Web Vitals, error rates, latency); define on-call rotation.
+> - Next.js SSR Optimizations: Prefer `revalidatePath`/`revalidateTag` where appropriate, cache headers, and avoid blocking waterfalls in server components.
 
 ---
 
@@ -340,6 +341,7 @@ pnpm build
 
 ## 📚 Related Documentation
 
+- **Monitoring & Analytics Setup**: `docs/MONITORING_ANALYTICS_SETUP.md` ⭐ **Use this for comprehensive monitoring setup**
 - **Deployment**: `docs/PRODUCTION_DEPLOYMENT.md`
 - **Architecture**: `docs/ARCHITECTURE.md`
 - **Database**: `docs/DATABASE.md`

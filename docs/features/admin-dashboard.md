@@ -4,6 +4,10 @@
 
 ---
 
+> სტატუსი: Draft (არ არის დასრულებული) — დოკუმენტი განახლებადია და ეტაპობრივად გაფართოვდება.
+>
+> განახლების პრინციპი: ფუნქციების იმპლემენტაცია და დოკუმენტის განახლება მოხდება მკაცრად `docs/PROJECT_PRIORITIES.md`-ში განსაზღვრული თანმიმდევრობით (Phase 1 → Phase 2 → Phase 3 ...). როგორც კი პროექტის შესაბამის ფაზაში კონკრეტული ფუნქცია დასრულდება, აქ დაემატება შესაბამისი სექცია/ქვესექცია (UI, API, DB, RLS, Verification, Troubleshooting) და აღიწერება რეალიზებული ქცევა.
+
 ## 📋 Overview
 
 Admin Dashboard არის პლატფორმის მართვის ინსტრუმენტი, რომელიც საშუალებას აძლევს ადმინისტრატორებს:
@@ -30,7 +34,7 @@ Admin Dashboard არის **Phase 3+** ფუნქცია და არ �
 
 ამ დოკუმენტის მიზანია **დაგეგმვა** და არა იმპლემენტაცია საწყის ეტაპზე.
 
-როდესაც მივალთ Phase 3 ეტაპზე, Cursor ამ დოკზე დაყრდნობით შექმნის საჭირო კოდს და SQL-ს.
+როცა მივალთ Phase 3 ეტაპზე, Cursor ამ დოკზე დაყრდნობით შექმნის საჭირო კოდს და SQL-ს.
 
 ---
 
@@ -726,6 +730,132 @@ Add to translation files (see `features/i18n-language-switcher.md`):
   - Admin tables schema
   - RLS policies
   - Admin functions
+
+---
+
+## 🧭 Admin Features – Current Implementation (Endpoints, UI, DB)
+
+> ეს სექცია აღწერს იმ ფუნქციონალს, რაც პროექტში უკვე დაემატა ან მიმდინარეობს. გამოიყენე kuten ოპერატიული რუკა.
+
+### 1) User Details & Role Management
+- UI:
+  - `src/components/admin/UserDetailsClient.tsx`
+  - `src/components/admin/UserActions.tsx` (Assign/Remove role, Ban/Suspend/Unban/Unsuspend)
+  - `src/components/admin/BanSuspendModal.tsx`
+- API:
+  - `POST /api/admin/users/[id]/role` — assign role
+  - `DELETE /api/admin/users/[id]/role` — remove role
+  - `POST /api/admin/users/[id]/ban` — ban user (sets `banned_at`, `ban_reason`, clears `suspended_until`)
+  - `DELETE /api/admin/users/[id]/ban` — unban user (clears `banned_at`, `ban_reason`)
+  - `POST /api/admin/users/[id]/suspend` — suspend user (sets `suspended_until`, `ban_reason`)
+  - `DELETE /api/admin/users/[id]/suspend` — unsuspend user (clears `suspended_until`, `ban_reason`)
+- Database:
+  - `profiles` ველები: `banned_at TIMESTAMPTZ`, `suspended_until TIMESTAMPTZ`, `ban_reason TEXT`
+  - RLS: ბან/სუსპენდი ზღუდავს create/view ქმედებებს კონტენტზე (stories, comments, likes)
+
+### 2) Content Moderation (Reports)
+- UI:
+  - `src/components/admin/ContentModerationClient.tsx`
+  - `src/components/admin/ReportList.tsx`
+  - `src/components/admin/ReportFilters.tsx`
+- API:
+  - `GET /api/admin/moderation` — აბრუნებს რეპორტების სია + დაკავშირებული პროფილები
+  - `POST /api/admin/moderation/[id]` — სტატუსის შეცვლა (pending/reviewed/resolved/dismissed)
+  - `POST /api/admin/moderation/[id]/delete-content` — კონტენტის წაშლა (story/comment/post)
+- Database:
+  - `content_reports` (+ `description` TEXT, თუ მიგრაცია გაშვებულია)
+  - ინდექსები: `status`, `(content_type, content_id)`, `created_at DESC`
+  - RLS: ავტორი ხედავს საკუთარ რეპორტებს; ადმინი — ყველა რეპორტს
+
+### 3) User Reporting (Client → Server)
+- UI:
+  - `src/components/report/ReportButton.tsx`
+  - `src/components/report/ReportModal.tsx`
+- API:
+  - `POST /api/report` — reason + optional description
+    - პროფილის ვალიდაცია
+    - ბანი/სუსპენდი ბლოკი
+    - Column fallback (`description` არ არსებობს? — retry ურეცხ `description`-ის გარეშე)
+- Database:
+  - `content_reports` — ველი `description TEXT` მიგრაციით
+
+### 4) Analytics Dashboard
+- UI:
+  - `src/components/admin/AnalyticsDashboardClient.tsx`
+- სფეროები:
+  - აქტიური მომხმარებლები, ახალი სტორი/პოსტები, რეპორტები, ბანები/სუსპენდი
+
+### 5) System Settings
+- UI:
+  - `src/components/admin/SystemSettingsClient.tsx`
+  - `src/components/admin/SettingCard.tsx`
+- API:
+  - `GET /api/admin/settings`
+  - `PUT /api/admin/settings/[key]`
+- Database:
+  - `platform_settings (key TEXT PRIMARY KEY, value JSONB, description TEXT, updated_by UUID, created_at, updated_at)`
+  - მაგალითები: feature flags, limits, thresholds
+
+### 6) Audit Logs
+- Database:
+  - `admin_audit_logs (admin_id, action, details JSONB, created_at)`
+- ჩაწერა:
+  - role assign/remove, ban/suspend/unban/unsuspend, moderation actions, settings update
+
+### 7) Permissions Matrix (Quick View)
+- super_admin: ყველა ნებართვა
+- admin: manageUsers, moderateContent, viewAnalytics, manageSettings
+- moderator: moderateContent, viewAnalytics
+- support: viewAnalytics
+
+---
+
+## 🔎 Verification SQL (Supabase)
+
+```sql
+-- როლი
+SELECT * FROM admin_roles WHERE user_id = auth.uid();
+
+-- ადმინი?
+SELECT is_admin(auth.uid());
+
+-- ნებართვა (moderation)?
+SELECT has_admin_permission(auth.uid(), 'canModerateContent');
+
+-- რეპორტის description სვეტი არსებობს?
+SELECT column_name 
+FROM information_schema.columns
+WHERE table_schema = 'public'
+  AND table_name = 'content_reports'
+  AND column_name = 'description';
+```
+
+---
+
+## 🧰 Troubleshooting (ქუიქ ჩექლისტი)
+
+- Reports არ ჩანს `/admin/moderation`-ში?
+  - გადაამოწმე `GET /api/admin/moderation` response და ბრაუზერის Console-ის ლოგები
+  - `is_admin()` და `has_admin_permission()` აბრუნებს სწორს?
+  - RLS პოლიტიკა `content_reports`-ზე აქტიურია?
+
+- Report submission იძლევა `{}` error-ს?
+  - გახსენი Network → `/api/report` response (status/body)
+  - ბანი/სუსპენდი ხომ არ არის აქტიური პროფილზე?
+  - მიგრაციით დაემატა `content_reports.description`?
+  - თუ არა — API-ს გვაქვს fallback retry description-ის გარეშე
+
+- Settings არ იკითხება/იცვლება?
+  - შეამოწმე `platform_settings`-ის RLS და admin permissions
+
+---
+
+## 🧭 Navigation (Admin UI)
+
+- Router: Users / Moderation / Analytics / Settings
+- Components:
+  - `AdminDashboardClient`, `UserDetailsClient`, `ContentModerationClient`,
+    `AnalyticsDashboardClient`, `SystemSettingsClient`
 
 ---
 

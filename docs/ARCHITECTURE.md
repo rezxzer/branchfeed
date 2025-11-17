@@ -1,6 +1,25 @@
-# System Architecture - BranchFeed
+# Architecture Overview
 
-ეს დოკუმენტაცია აღწერს BranchFeed-ის სისტემის არქიტექტურას, tech stack-ს, project structure-ს, data flow-ს და key architectural decisions-ებს.
+> Added (2025-01):
+>
+> - Deployment: Vercel (Next.js optimized) as primary hosting; align environment variables and build output with Vercel conventions.
+> - Monitoring: Integrate Sentry for error tracking and Vercel Analytics for usage metrics; document data flow and PII redaction policy.
+> - Diagrams: Include Mermaid blocks for request/data flow in future revisions.
+
+```mermaid
+flowchart TD
+  A[Client] -->|HTTPS| B[Next.js App Router]
+  B --> C[Supabase (Auth/DB/RLS)]
+  B --> D[Edge Functions (optional)]
+  C --> E[(Postgres)]
+  B --> F[Storage/CDN]
+```
+
+---
+
+> სტატუსი: Draft / Living Document — ეს დოკუმენტი არ არის საბოლოო.
+>
+> განახლების პრინციპი: არქიტექტურის დეტალური სექციები და მოდულები ეტაპობრივად დაემატება პროექტის მოთხოვნილებების მიხედვით, მკაცრად `docs/PROJECT_PRIORITIES.md`-ში განსაზღვრული ფაზებისა და პრიორიტეტების თანმიმდევრობით. როგორც კი კონკრეტული ფუნქციონალი შევა იმპლემენტაციის ფაზაში, აქ დაემატება შესაბამისი განყოფილება (დინამიკა, დიაგრამები, კონტრაქტები, RLS/სეკურითი შენიშვნები, შესრულების და სკეილინგის პრინციპები).
 
 **Last Updated**: 2025-01-15
 

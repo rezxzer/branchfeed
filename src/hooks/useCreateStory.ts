@@ -18,9 +18,28 @@ export function useCreateStory() {
   const createStory = async (data: CreateStoryData): Promise<string> => {
     setLoading(true)
     setError(null)
-    setUploadProgress({ stage: 'uploading', progress: 0, message: 'Uploading media...' })
+    setUploadProgress({ stage: 'uploading', progress: 0, message: 'Checking limits...' })
 
     try {
+      // Check subscription limits before creating story
+      const limitCheckResponse = await fetch('/api/stories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nodesCount: data.nodes.length }),
+      });
+
+      if (!limitCheckResponse.ok) {
+        const limitError = await limitCheckResponse.json();
+        if (limitError.limitExceeded) {
+          const error = new Error(limitError.error || 'Subscription limit reached');
+          (error as any).limitExceeded = true;
+          (error as any).remaining = limitError.remaining;
+          (error as any).maxBranches = limitError.maxBranches;
+          throw error;
+        }
+        throw new Error(limitError.error || 'Failed to check subscription limits');
+      }
+
       // Simulate progress for better UX
       const totalFiles = 1 + (data.root.media ? 1 : 0) + data.nodes.reduce((sum, node) => {
         return sum + (node.choiceA.media ? 1 : 0) + (node.choiceB.media ? 1 : 0)

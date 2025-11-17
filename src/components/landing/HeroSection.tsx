@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/hooks/useTranslation'
 import { Button } from '@/components/ui/Button'
@@ -7,6 +8,11 @@ import { Button } from '@/components/ui/Button'
 export function HeroSection() {
   const router = useRouter()
   const { t } = useTranslation()
+
+  useEffect(() => {
+    router.prefetch('/signup')
+    router.prefetch('/signin')
+  }, [router])
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gradient-brand px-4 py-20">

@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge'
 import type { Profile, Story } from '@/types'
 
 interface ProfilePageClientProps {
@@ -21,6 +22,10 @@ export function ProfilePageClient({
 }: ProfilePageClientProps) {
   const { t } = useTranslation()
   const router = useRouter()
+  const num = new Intl.NumberFormat()
+
+  const totalLikes = stories.reduce((sum, story) => sum + (story.likes_count ?? 0), 0)
+  const totalViews = stories.reduce((sum, story) => sum + (story.views_count ?? 0), 0)
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -49,9 +54,14 @@ export function ProfilePageClient({
 
               {/* User Info */}
               <div className="flex-1 min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-white mb-1 break-words">
-                  {profile.username || 'User'}
-                </h1>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-xl sm:text-2xl font-bold text-white break-words">
+                    {profile.username || 'User'}
+                  </h1>
+                  {isOwnProfile && (
+                    <SubscriptionBadge variant="compact" showLabel={false} />
+                  )}
+                </div>
                 {profile.bio && (
                   <p className="text-gray-300 text-xs sm:text-sm break-words">{profile.bio}</p>
                 )}
@@ -78,19 +88,19 @@ export function ProfilePageClient({
         <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4 sm:mb-6">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-700/50">
             <div className="text-xl sm:text-2xl font-bold text-brand-cyan mb-1">
-              {stories.length}
+              {num.format(stories.length)}
             </div>
             <div className="text-xs sm:text-sm text-gray-400">Stories</div>
           </div>
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-700/50">
             <div className="text-xl sm:text-2xl font-bold text-brand-plum mb-1">
-              {stories.reduce((sum, story) => sum + (story.likes_count || 0), 0)}
+              {num.format(totalLikes)}
             </div>
             <div className="text-xs sm:text-sm text-gray-400">Total Likes</div>
           </div>
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-lg sm:rounded-xl p-3 sm:p-4 border border-gray-700/50">
             <div className="text-xl sm:text-2xl font-bold text-brand-iris mb-1">
-              {stories.reduce((sum, story) => sum + (story.views_count || 0), 0)}
+              {num.format(totalViews)}
             </div>
             <div className="text-xs sm:text-sm text-gray-400">Total Views</div>
           </div>
@@ -142,9 +152,9 @@ export function ProfilePageClient({
                     </p>
                   )}
                   <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
-                    <span>{story.likes_count || 0} likes</span>
-                    <span>{story.views_count || 0} views</span>
-                    <span>{story.branches_count || 0} branches</span>
+                    <span>{num.format(story.likes_count || 0)} likes</span>
+                    <span>{num.format(story.views_count || 0)} views</span>
+                    <span>{num.format(story.paths_count ?? 0)} paths</span>
                   </div>
                 </div>
               ))}

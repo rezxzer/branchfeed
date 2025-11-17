@@ -1,7 +1,9 @@
-# BranchFeed MVP - Smoke Test Checklist
+# Smoke Test Checklist
 
-**Last Updated**: 2025-01-15  
-**Purpose**: Manual testing checklist before production deployment
+> Updates (2025-01):
+>
+> - Cross-Browser: Validate on latest Chrome, Firefox, Safari (desktop + mobile emulation) basic flows (auth, feed, story view).
+> - Error Pages: Test custom error pages (404, 500) and ensure consistent layout and translations.
 
 ---
 

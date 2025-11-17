@@ -5,7 +5,9 @@ import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/Button'
+import { ReportButton } from '@/components/report/ReportButton'
 import type { Comment as CommentType } from '@/lib/comments'
+import { formatDistanceToNow } from 'date-fns'
 
 interface CommentProps {
   comment: CommentType
@@ -36,24 +38,11 @@ export function Comment({ comment, onDelete }: CommentProps) {
   }
 
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const seconds = Math.floor(diff / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    const days = Math.floor(hours / 24)
-
-    if (days > 0) {
-      return `${days}d ago`
+    try {
+      return formatDistanceToNow(new Date(timestamp), { addSuffix: true })
+    } catch {
+      return ''
     }
-    if (hours > 0) {
-      return `${hours}h ago`
-    }
-    if (minutes > 0) {
-      return `${minutes}m ago`
-    }
-    return 'just now'
   }
 
   return (
@@ -80,7 +69,7 @@ export function Comment({ comment, onDelete }: CommentProps) {
           <span className="font-semibold text-white text-sm">
             {comment.author.username}
           </span>
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-gray-300">
             {formatTime(comment.created_at)}
           </span>
         </div>
@@ -89,19 +78,29 @@ export function Comment({ comment, onDelete }: CommentProps) {
         </p>
       </div>
 
-      {/* Delete Button */}
-      {isOwnComment && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="text-gray-400 hover:text-red-400 flex-shrink-0"
-          aria-label="Delete comment"
-        >
-          {isDeleting ? '...' : '🗑️'}
-        </Button>
-      )}
+      {/* Actions */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        {isOwnComment && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="text-gray-300 hover:text-red-300"
+            aria-label="Delete comment"
+          >
+            {isDeleting ? '...' : '🗑️'}
+          </Button>
+        )}
+        {!isOwnComment && (
+          <ReportButton
+            contentType="comment"
+            contentId={comment.id}
+            variant="icon"
+            className="text-gray-300"
+          />
+        )}
+      </div>
     </div>
   )
 }

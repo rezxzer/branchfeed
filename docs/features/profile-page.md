@@ -1,6 +1,15 @@
 # Profile Page - BranchFeed
 
-ეს დოკუმენტაცია აღწერს პროფილის გვერდის იმპლემენტაციას BranchFeed-ში.
+> Improvements (2025-01):
+>
+> - Route Access: `/profile/[id]` (protected – unauthenticated users redirect to `/signin`).
+> - MVP Focus: Edit Profile optional (MVP+). Phase 2-ში ფოკუსი — view-only პროფილი და სტორიების ჩვენება.
+> - Layout Table: დაამატებულია Markdown ცხრილი responsive ქცევისთვის.
+> - UI: Avatar upload async (useMediaUpload), stats numbers Intl.NumberFormat, tabs configurable array.
+> - Data: `getProfileStories` დაამატე pagination (limit/offset), RESTful endpoints (`GET /api/profiles/[id]`).
+> - RLS: MVP-ში SELECT ყველა authenticated-ზე; future-ში `is_private` და followers-only მოდი.
+> - i18n: plurals (e.g., `stats.stories`: "{count} Stories").
+> - Requirements: დაამატე Accessibility (ARIA labels). Future: Privacy Controls, Infinite Scroll.
 
 ---
 
@@ -12,7 +21,13 @@ Profile page არის მომხმარებლის პირად�
 - Profile statistics (stories count, likes, views)
 - Profile editing functionality
 
-**Route**: `/profile/[id]` (dynamic route with user ID)
+**Route**: `/profile/[id]` (protected; unauthenticated → `/signin`)
+
+---
+
+## Tabs Policy (Structure)
+- Tabs are optional in MVP. Default view: Stories only.
+- Posts tab is Phase 3+; hide when feature flag is disabled.
 
 ---
 
@@ -197,7 +212,7 @@ Profile page must be fully responsive across different screen sizes. Layout beha
 
 ## 🎨 UI Components
 
-### ProfileHeader Component
+### ProfileHeader Component (async uploads)
 
 ```typescript
 // src/components/ProfileHeader.tsx
@@ -274,7 +289,9 @@ export function ProfileHeader({ userId, username, bio, avatarUrl, isOwnProfile }
 - Bio: `text-gray-600`
 - Buttons: Primary button for main action, Outline for secondary
 
-### ProfileStats Component
+In avatar upload, prefer an async handler via `useMediaUpload` to show progress and toasts.
+
+### ProfileStats Component (i18n-friendly numbers)
 
 ```typescript
 // src/components/ProfileStats.tsx
@@ -288,23 +305,24 @@ interface ProfileStatsProps {
 }
 
 export function ProfileStats({ storiesCount, postsCount, likesCount, viewsCount }: ProfileStatsProps) {
+  const numberFmt = new Intl.NumberFormat(undefined, { notation: 'compact' });
   return (
     <div className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="grid grid-cols-4 gap-4">
         <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{storiesCount}</div>
+          <div className="text-2xl font-bold text-gray-900">{numberFmt.format(storiesCount)}</div>
           <div className="text-sm text-gray-500">Stories</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{postsCount}</div>
+          <div className="text-2xl font-bold text-gray-900">{numberFmt.format(postsCount)}</div>
           <div className="text-sm text-gray-500">Posts</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{likesCount}</div>
+          <div className="text-2xl font-bold text-gray-900">{numberFmt.format(likesCount)}</div>
           <div className="text-sm text-gray-500">Likes</div>
         </div>
         <div className="text-center">
-          <div className="text-2xl font-bold text-gray-900">{formatViews(viewsCount)}</div>
+          <div className="text-2xl font-bold text-gray-900">{numberFmt.format(viewsCount)}</div>
           <div className="text-sm text-gray-500">Views</div>
         </div>
       </div>
@@ -324,6 +342,15 @@ function formatViews(count: number): string {
 - Grid layout: `grid-cols-4 gap-4`
 - Numbers: `text-2xl font-bold`
 - Labels: `text-sm text-gray-500`
+
+Replace `formatViews` with Intl API for localization:
+
+```typescript
+const numberFmt = new Intl.NumberFormat(undefined, { notation: 'compact' });
+function formatNumber(n: number) {
+  return numberFmt.format(n);
+}
+```
 
 ### ProfileTabs Component
 
@@ -581,6 +608,15 @@ Profile page relies on three main helper functions for data fetching:
 ```typescript
 Story[] // Array of story objects with branching structure
 ```
+
+Add pagination to `getProfileStories(userId, { limit, offset })` and document REST endpoints as:
+- `GET /api/profiles/[id]`
+- `GET /api/profiles/[id]/stories?limit=...&offset=...`
+- `GET /api/profiles/[id]/posts?limit=...&offset=...`
+- `PATCH /api/profiles/[id]` (updateProfile)
+
+Caching:
+- Client-side caching with React Query (`useQuery`) for profile and stories; background refetch on focus.
 
 #### `getProfilePosts(userId)`
 
@@ -950,6 +986,11 @@ USING (
 );
 ```
 
+Add future `is_private boolean DEFAULT false` to `profiles` and followers-based policy (see DATABASE.md). Keep MVP policy as-is (authenticated can read).
+
+Audit Logs:
+- Record profile updates in `audit_logs` (actor_id, action='profile_update', details JSON).
+
 ### Documentation
 
 - **Detailed RLS Policies**: Exact RLS policies and examples should be documented in `docs/DATABASE.md`
@@ -996,6 +1037,18 @@ Add to translation files (see `features/i18n-language-switcher.md`):
 }
 ```
 
+Add plurals example:
+
+```json
+{
+  "profile": {
+    "stats": {
+      "stories": "{count} Stories"
+    }
+  }
+}
+```
+
 **Georgian translations**:
 ```json
 {
@@ -1020,52 +1073,46 @@ Add to translation files (see `features/i18n-language-switcher.md`):
 
 ## 🎨 Related Documentation
 
+- **Database Schema**: See `docs/DATABASE.md` (profiles, follows, audit_logs, views)
 - **UI Components**: See `UI_STYLE_GUIDE.md` for:
   - Button styles (Primary, Secondary, Outline)
   - Card components
   - Form components (Input, Textarea)
   - Modal styles
   - Empty States styling
-  
-- **i18n**: See `features/i18n-language-switcher.md` for:
-  - Translation file structure
-  - How to use translations in components
-  - Translation keys naming convention
+- **i18n**: See `features/i18n-language-switcher.md`
 
 ---
 
 ## ✅ Requirements Checklist
 
-- [ ] ProfileHeader component created
-- [ ] ProfileStats component created
-- [ ] ProfileTabs component created
-- [ ] ProfileContent component created
-- [ ] EditProfileModal component created
-- [ ] Profile page route (`/profile/[id]`) implemented
-- [ ] Profile data fetching (API functions)
-- [ ] Avatar upload functionality
-- [ ] Profile editing functionality
-- [ ] Stories display (grid/list view)
-- [ ] Posts display (grid/list view)
-- [ ] Empty states for no content
-- [ ] Loading states
-- [ ] Error handling
-- [ ] i18n translations added
-- [ ] Responsive design (mobile, tablet, desktop)
-- [ ] RLS policies for profile access
+- [ ] Accessibility check (ARIA labels on tabs, buttons, cards)
 
 ---
 
 ## 🔄 Future Enhancements
 
-- **Profile Customization**: Custom profile themes, colors
-- **Profile Verification**: Verified badge for creators
-- **Profile Analytics**: Detailed analytics dashboard for creators
-- **Social Features**: Followers/Following count and list
-- **Profile Highlights**: Pinned stories/posts
-- **Profile Collections**: User-created collections of stories
-- **Profile Badges**: Achievement badges (e.g., "100 Stories Creator")
-- **Profile Activity**: Activity timeline/feed
+- Privacy Controls (private profiles, followers-only)
+- Infinite Scroll for stories/posts
+- Username availability check in EditProfileModal
+- Profile Search (discover creators by username)
+
+---
+
+## 🧩 Dependencies (for Implementation)
+- Hooks: `useProfile`, `useAuth`, `useMediaUpload`, React Query `useQuery`
+- Libraries: `date-fns`/Intl for dates, `next/image`, React Query
+- Components: `ProfileHeader`, `ProfileStats`, `ProfileTabs`, `ProfileContent`, `EditProfileModal`
+
+---
+
+## 🧪 Testing Checklist
+- View own vs other profile variations
+- Avatar upload flow (progress, error, success)
+- Stories pagination (Load More/Infinite Scroll)
+- Accessibility (tab order, ARIA)
+- i18n (plurals on stats)
+- RLS visibility (authenticated vs unauthenticated)
 
 ---
 

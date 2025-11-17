@@ -15,7 +15,7 @@ interface CommentSectionProps {
   storyId: string
 }
 
-const MAX_COMMENT_LENGTH = 500
+const MAX_COMMENT_LENGTH = Number(process.env.NEXT_PUBLIC_MAX_COMMENT_LENGTH || 500)
 
 export function CommentSection({ storyId }: CommentSectionProps) {
   const { t } = useTranslation()
@@ -39,7 +39,7 @@ export function CommentSection({ storyId }: CommentSectionProps) {
     }
 
     if (trimmed.length > MAX_COMMENT_LENGTH) {
-      showToast(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`, 'error')
+      showToast(`Comment too long (${trimmed.length}/${MAX_COMMENT_LENGTH} characters)`, 'error')
       return
     }
 
@@ -48,9 +48,20 @@ export function CommentSection({ storyId }: CommentSectionProps) {
       await addComment(trimmed)
       setCommentText('')
       showToast('Comment added successfully!', 'success')
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error submitting comment:', err)
-      showToast('Failed to add comment. Please try again.', 'error')
+      
+      // Check if it's a subscription limit error
+      if (err.message?.includes('limit') || err.message?.includes('Limit')) {
+        const errorMessage = err.message || 'Daily comment limit reached'
+        showToast(
+          `${errorMessage}. Upgrade your subscription to increase limits.`,
+          'error',
+          5000
+        )
+      } else {
+        showToast('Failed to add comment. Please try again.', 'error')
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -74,7 +85,7 @@ export function CommentSection({ storyId }: CommentSectionProps) {
             placeholder="Write a comment..."
             rows={3}
             maxLength={MAX_COMMENT_LENGTH}
-            className={`bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 ${
+            className={`bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-300 ${
               isOverLimit ? 'border-red-500' : ''
             }`}
           />
@@ -84,8 +95,8 @@ export function CommentSection({ storyId }: CommentSectionProps) {
                 isOverLimit
                   ? 'text-red-400'
                   : remainingChars < 50
-                    ? 'text-yellow-400'
-                    : 'text-gray-400'
+                    ? 'text-yellow-300'
+                    : 'text-gray-300'
               }`}
             >
               {remainingChars} characters remaining
@@ -99,9 +110,12 @@ export function CommentSection({ storyId }: CommentSectionProps) {
               {isSubmitting ? <Spinner size="sm" /> : 'Post Comment'}
             </Button>
           </div>
+          {isOverLimit && (
+            <div className="text-xs text-red-300">{`Comment too long (${commentText.length}/${MAX_COMMENT_LENGTH})`}</div>
+          )}
         </form>
       ) : (
-        <div className="p-4 sm:p-5 bg-gray-800/30 rounded-lg border border-gray-700/30 text-center text-sm sm:text-base text-gray-400">
+        <div className="p-4 sm:p-5 bg-gray-800/30 rounded-lg border border-gray-700/30 text-center text-sm sm:text-base text-gray-300">
           Please sign in to comment
         </div>
       )}
@@ -114,11 +128,11 @@ export function CommentSection({ storyId }: CommentSectionProps) {
           ))}
         </div>
       ) : error ? (
-        <div className="p-4 bg-red-900/20 rounded-lg border border-red-700/30 text-red-400 text-sm">
+        <div className="p-4 bg-red-900/20 rounded-lg border border-red-700/30 text-red-300 text-sm">
           Error loading comments: {error.message}
         </div>
       ) : comments.length === 0 ? (
-        <div className="p-4 sm:p-5 bg-gray-800/30 rounded-lg border border-gray-700/30 text-center text-sm sm:text-base text-gray-400">
+        <div className="p-4 sm:p-5 bg-gray-800/30 rounded-lg border border-gray-700/30 text-center text-sm sm:text-base text-gray-300">
           No comments yet. Be the first to comment!
         </div>
       ) : (

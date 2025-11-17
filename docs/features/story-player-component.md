@@ -2,6 +2,12 @@
 
 ეს დოკუმენტაცია აღწერს Story Player Component-ის იმპლემენტაციას BranchFeed-ში.
 
+> Updates (2025-01):
+>
+> - Fullscreen: Treat fullscreen support as MVP. Detect support (e.g., `document.fullscreenEnabled` and vendor prefixes); gracefully disable on unsupported devices (iOS Safari caveats).
+> - Video Poster: Provide `poster={thumbnailUrl}` for initial load to improve perceived performance.
+> - Retry Debounce: Wrap `onRetry` in a 400–600ms debounce to avoid rapid repeat requests.
+
 ---
 
 ## 📋 Overview

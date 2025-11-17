@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import { Spinner } from './ui/Spinner'
 import { ErrorState } from './ui/ErrorState'
@@ -29,6 +29,9 @@ export interface MediaDisplayProps {
   /** Mute video (default: false) */
   muted?: boolean
   
+  /** Poster image for video (thumbnail shown before load) */
+  poster?: string
+  
   /** Lazy load image (default: true) */
   lazy?: boolean
   
@@ -53,6 +56,7 @@ export function MediaDisplay({
   autoPlay = false,
   loop = false,
   muted = false,
+  poster,
   lazy = true,
   onLoad,
   onError,
@@ -62,6 +66,7 @@ export function MediaDisplay({
   const { t } = useTranslation()
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
+  const lastRetryRef = useRef<number>(0)
 
   useEffect(() => {
     setIsLoading(true)
@@ -80,10 +85,11 @@ export function MediaDisplay({
   }
 
   const handleRetry = () => {
+    const now = Date.now()
+    if (now - lastRetryRef.current < 500) return // debounce ~500ms
+    lastRetryRef.current = now
     setIsLoading(true)
     setHasError(false)
-    // Force reload by updating key or URL if needed
-    // Parent component can handle URL refresh if needed
   }
 
   if (hasError) {
@@ -125,8 +131,10 @@ export function MediaDisplay({
             onLoad={handleLoad}
             onError={() => handleError(new Error('Image load failed'))}
             loading={lazy ? 'lazy' : 'eager'}
-            sizes="(max-width: 768px) 100vw, 448px"
-            unoptimized
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 100vw, (max-width: 1024px) 448px, 448px"
+            quality={85}
+            priority={!lazy}
+            unoptimized={mediaUrl.includes('supabase.co') && !mediaUrl.includes('storage')}
           />
         </div>
       ) : (
@@ -137,6 +145,8 @@ export function MediaDisplay({
           autoPlay={autoPlay}
           loop={loop}
           muted={muted}
+          poster={poster}
+          preload="metadata"
           playsInline
           onLoadedData={handleLoad}
           onError={() => handleError(new Error('Video load failed'))}

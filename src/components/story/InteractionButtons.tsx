@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { LikeButton } from '@/components/ui/LikeButton'
+import { ReportButton } from '@/components/report/ReportButton'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useToast } from '@/components/ui/toast'
 import { copyStoryLink, shareNative } from '@/lib/share'
@@ -14,6 +15,9 @@ interface InteractionButtonsProps {
   commentsCount?: number
   currentPath?: ('A' | 'B')[]
   storyTitle?: string
+  onLikeClick?: () => void
+  isLiked?: boolean
+  isLiking?: boolean
 }
 
 export function InteractionButtons({
@@ -23,6 +27,9 @@ export function InteractionButtons({
   commentsCount = 0,
   currentPath = [],
   storyTitle,
+  onLikeClick,
+  isLiked = false,
+  isLiking = false,
 }: InteractionButtonsProps) {
   const { t } = useTranslation()
   const { showToast } = useToast()
@@ -70,6 +77,10 @@ export function InteractionButtons({
           storyId={storyId}
           initialLikesCount={likesCount}
           size="sm"
+          onLikeClick={onLikeClick}
+          controlledLikesCount={onLikeClick ? likesCount : undefined}
+          isLiked={onLikeClick ? isLiked : undefined}
+          isLoading={onLikeClick ? isLiking : undefined}
         />
         <Button
           variant="ghost"
@@ -88,6 +99,12 @@ export function InteractionButtons({
         >
           🔗 <span className="hidden sm:inline">{t('story.interactions.share')}</span>
         </Button>
+        <ReportButton
+          contentType="story"
+          contentId={storyId}
+          variant="icon"
+          className="ml-auto sm:ml-0"
+        />
       </div>
 
       <div className="text-xs sm:text-sm text-gray-400 text-center sm:text-right">

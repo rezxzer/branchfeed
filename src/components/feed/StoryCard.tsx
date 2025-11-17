@@ -80,12 +80,13 @@ export function StoryCard({ story }: StoryCardProps) {
           </p>
         )}
 
-        {/* Author & Stats */}
-        <div className="flex items-center justify-between pt-2 border-t border-gray-700/50">
+        {/* Footer: Author & Stats */}
+        <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-400 pt-2 border-t border-gray-700/50">
+          {/* Author - Left */}
           <Link
             href={`/profile/${story.author_id}`}
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-2 hover:text-brand-cyan transition-colors ease-smooth"
+            className="flex items-center gap-2 hover:text-brand-cyan transition-colors ease-smooth flex-shrink-0"
           >
             {story.author?.avatar_url ? (
               <Image
@@ -101,20 +102,33 @@ export function StoryCard({ story }: StoryCardProps) {
                 {story.author?.username?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
-            <span className="text-sm text-gray-300 font-medium">
+            <span className="text-slate-200 font-medium">
               {story.author?.username || 'Unknown'}
             </span>
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-400">
-              {story.branches_count !== undefined && (
-                <span>{story.branches_count} {t('feed.stats.paths')}</span>
-              )}
-              <span>{story.likes_count} {t('feed.stats.likes')}</span>
-              <span>{story.views_count} {t('feed.stats.views')}</span>
+          {/* Stats & Share - Right */}
+          <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1 flex-1 sm:flex-nowrap">
+            {/* Paths */}
+            <div className="flex items-center gap-1">
+              <span className="font-semibold text-slate-50">{story.paths_count ?? 0}</span>
+              <span className="text-[10px] uppercase tracking-wide">paths</span>
             </div>
-            <div onClick={(e) => e.stopPropagation()}>
+            
+            {/* Likes */}
+            <div className="flex items-center gap-1">
+              <span className="font-semibold text-slate-50">{story.likes_count ?? 0}</span>
+              <span className="text-[10px] uppercase tracking-wide">likes</span>
+            </div>
+            
+            {/* Views */}
+            <div className="flex items-center gap-1">
+              <span className="font-semibold text-slate-50">{story.views_count ?? 0}</span>
+              <span className="text-[10px] uppercase tracking-wide">views</span>
+            </div>
+            
+            {/* Share Button */}
+            <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
               <ShareStoryButton storyId={story.id} className="scale-90 sm:scale-100" />
             </div>
           </div>

@@ -1,6 +1,10 @@
 # Header / Navigation - BranchFeed
 
-ეს დოკუმენტაცია აღწერს Header/Navigation კომპონენტის იმპლემენტაციას BranchFeed-ში.
+> Improvements (2025-01):
+>
+> - State Separation: Keep `mobileMenuOpen` and `userMenuOpen` completely independent to avoid cross-effects.
+> - Active Highlighting: Make active route styling required in both desktop and mobile menus for orientation.
+> - Admin Link: Render only when `isAdmin` (server-verified) is true; avoid flashing by using a consistent auth state.
 
 ---
 

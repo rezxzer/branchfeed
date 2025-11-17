@@ -15,6 +15,8 @@ BranchFeed uses **Supabase PostgreSQL** as its database. The schema is designed 
 - **Path Tracking**: User journey through branching narratives
 - **Interactions**: Likes, comments, views
 - **Media Storage**: References to Supabase Storage URLs
+- **Subscriptions**: Premium subscription tiers (Phase 0 - Test Mode Only)
+- **Payments**: Payment transaction history (Phase 0 - Test Mode Only)
 
 ---
 
@@ -52,6 +54,9 @@ CREATE TABLE profiles (
 **Indexes**:
 - `idx_profiles_username` - On `username` (for fast username lookups)
 - `idx_profiles_email` - On `email` (for fast email lookups)
+- `idx_profiles_updated_at` - On `updated_at DESC` (for active users queries in analytics)
+- `idx_profiles_banned_at` - On `banned_at` WHERE `banned_at IS NOT NULL` (for banned users queries)
+- `idx_profiles_suspended_until` - On `suspended_until` WHERE `suspended_until IS NOT NULL` (for suspended users queries)
 
 **RLS Policies**:
 - **Public read**: Anyone can read profiles
@@ -104,8 +109,9 @@ CREATE TABLE stories (
 
 **Indexes**:
 - `idx_stories_author_id` - On `author_id` (for author's stories queries)
-- `idx_stories_is_root` - On `is_root` WHERE `is_root = TRUE` (for feed queries)
-- `idx_stories_created_at` - On `created_at DESC` (for sorting by date)
+- `idx_stories_is_root_created_at` - On `(is_root, created_at DESC)` WHERE `is_root = TRUE` (for feed queries - composite index for better performance)
+- `idx_stories_views_count` - On `views_count DESC` (for popular stories queries)
+- `idx_stories_author_created` - On `(author_id, created_at DESC)` (for author's stories with sorting)
 
 **RLS Policies**:
 - **Public read**: Anyone can read stories
@@ -163,6 +169,8 @@ CREATE TABLE story_nodes (
 - `idx_story_nodes_story_id` - On `story_id` (for story's nodes queries)
 - `idx_story_nodes_parent` - On `(story_id, parent_node_id)` (for parent-child queries)
 - `idx_story_nodes_choice_label` - On `(story_id, parent_node_id, choice_label)` (for path navigation)
+- `idx_story_nodes_story_parent_choice` - On `(story_id, parent_node_id, choice_label)` (for efficient path navigation)
+- `idx_story_nodes_story_depth` - On `(story_id, depth)` (for story tree visualization)
 
 **RLS Policies**:
 - **Public read**: Anyone can read story nodes
@@ -221,6 +229,8 @@ CREATE TABLE user_story_progress (
 **Indexes**:
 - `idx_user_story_progress_user_story` - On `(user_id, story_id)` (for user's progress queries)
 - `idx_user_story_progress_story_id` - On `story_id` (for story statistics)
+- `idx_user_story_progress_story_completed` - On `(story_id, completed)` WHERE `completed = true` (for completion rate analytics)
+- `idx_user_story_progress_user_updated` - On `(user_id, updated_at DESC)` (for user's progress with sorting)
 
 **RLS Policies**:
 - **Authenticated read**: Users can read their own progress
@@ -309,9 +319,10 @@ CREATE TABLE comments (
 - `CHECK (story_id IS NOT NULL OR node_id IS NOT NULL)` - Must comment on story or node
 
 **Indexes**:
-- `idx_comments_story_id` - On `story_id` (for story's comments)
+- `idx_comments_story_id` - On `story_id` (for story's comments - basic lookup)
+- `idx_comments_story_created` - On `(story_id, created_at DESC)` (for story's comments with sorting - composite index for better performance)
+- `idx_comments_user_created` - On `(user_id, created_at DESC)` (for user's comments with sorting)
 - `idx_comments_node_id` - On `node_id` (for node's comments, future feature)
-- `idx_comments_user_id` - On `user_id` (for user's comments)
 
 **RLS Policies**:
 - **Public read**: Anyone can read comments
@@ -320,6 +331,113 @@ CREATE TABLE comments (
 
 **Triggers**:
 - `update_story_comments_count()` - Updates `stories.comments_count` when comments are added/removed (if implemented)
+
+---
+
+### 7. `user_subscriptions`
+
+User subscription table. Stores Stripe subscription information for premium tiers.
+
+**Schema**:
+```sql
+CREATE TABLE user_subscriptions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  stripe_customer_id TEXT UNIQUE,
+  stripe_subscription_id TEXT UNIQUE,
+  tier TEXT NOT NULL CHECK (tier IN ('supporter', 'pro', 'vip')),
+  status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'past_due', 'trialing', 'incomplete', 'incomplete_expired')),
+  current_period_start TIMESTAMPTZ,
+  current_period_end TIMESTAMPTZ,
+  cancel_at_period_end BOOLEAN DEFAULT FALSE,
+  canceled_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+```
+
+**Columns**:
+- `id` (UUID, PK) - Subscription record ID
+- `user_id` (UUID, FK → profiles.id) - User
+- `stripe_customer_id` (TEXT, UNIQUE) - Stripe customer ID
+- `stripe_subscription_id` (TEXT, UNIQUE) - Stripe subscription ID
+- `tier` (TEXT, CHECK) - Subscription tier: 'supporter', 'pro', or 'vip'
+- `status` (TEXT, CHECK) - Stripe subscription status
+- `current_period_start` (TIMESTAMPTZ) - Current billing period start
+- `current_period_end` (TIMESTAMPTZ) - Current billing period end
+- `cancel_at_period_end` (BOOLEAN) - Whether subscription will cancel at period end
+- `canceled_at` (TIMESTAMPTZ) - Cancellation timestamp
+- `created_at` (TIMESTAMPTZ) - Subscription creation timestamp
+- `updated_at` (TIMESTAMPTZ) - Last update timestamp
+
+**Constraints**:
+- `UNIQUE(user_id)` - One subscription per user
+
+**Indexes**:
+- `idx_user_subscriptions_user_id` - On `user_id` (for user's subscription queries)
+- `idx_user_subscriptions_stripe_customer_id` - On `stripe_customer_id` (for Stripe webhook lookups)
+- `idx_user_subscriptions_stripe_subscription_id` - On `stripe_subscription_id` (for Stripe webhook lookups)
+- `idx_user_subscriptions_status` - On `status` (for active subscriptions queries)
+- `idx_user_subscriptions_tier` - On `tier` (for tier-based analytics)
+
+**RLS Policies**:
+- **Authenticated read**: Users can read their own subscription
+- **Admin read**: Admins can read all subscriptions
+
+**Triggers**:
+- `update_subscription_updated_at()` - Updates `updated_at` on row update
+
+**Status**: Phase 0 (Test Mode Only) - See `REVENUE_PLAYBOOK.md` for details
+
+---
+
+### 8. `payment_history`
+
+Payment transaction history table. Tracks all payment transactions (subscriptions, one-time purchases, coins).
+
+**Schema**:
+```sql
+CREATE TABLE payment_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  subscription_id UUID REFERENCES user_subscriptions(id) ON DELETE SET NULL,
+  stripe_payment_intent_id TEXT UNIQUE,
+  stripe_invoice_id TEXT,
+  amount INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'usd',
+  status TEXT NOT NULL CHECK (status IN ('succeeded', 'pending', 'failed', 'refunded')),
+  payment_type TEXT NOT NULL CHECK (payment_type IN ('subscription', 'one_time', 'coins')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  metadata JSONB
+);
+```
+
+**Columns**:
+- `id` (UUID, PK) - Payment record ID
+- `user_id` (UUID, FK → profiles.id) - User who made payment
+- `subscription_id` (UUID, FK → user_subscriptions.id) - Related subscription (if applicable)
+- `stripe_payment_intent_id` (TEXT, UNIQUE) - Stripe payment intent ID
+- `stripe_invoice_id` (TEXT) - Stripe invoice ID
+- `amount` (INTEGER) - Payment amount in cents (e.g., 499 = $4.99)
+- `currency` (TEXT, DEFAULT 'usd') - Currency code
+- `status` (TEXT, CHECK) - Payment status: 'succeeded', 'pending', 'failed', 'refunded'
+- `payment_type` (TEXT, CHECK) - Payment type: 'subscription', 'one_time', or 'coins'
+- `created_at` (TIMESTAMPTZ) - Payment timestamp
+- `metadata` (JSONB) - Additional Stripe metadata
+
+**Indexes**:
+- `idx_payment_history_user_id` - On `user_id` (for user's payment history)
+- `idx_payment_history_subscription_id` - On `subscription_id` (for subscription payments)
+- `idx_payment_history_stripe_payment_intent_id` - On `stripe_payment_intent_id` (for Stripe webhook lookups)
+- `idx_payment_history_status` - On `status` (for payment status queries)
+- `idx_payment_history_created_at` - On `created_at DESC` (for chronological sorting)
+
+**RLS Policies**:
+- **Authenticated read**: Users can read their own payment history
+- **Admin read**: Admins can read all payment history
+
+**Status**: Phase 0 (Test Mode Only) - See `REVENUE_PLAYBOOK.md` for details
 
 ---
 
@@ -717,4 +835,20 @@ All foreign keys and frequently queried columns are indexed:
 
 **Last Updated**: 2025-01-15  
 **Status**: ✅ Complete - All tables, relationships, and policies documented
+
+# Database
+
+> Improvements (2025-01):
+>
+> - Profiles: Make `profiles.email` NOT NULL (aligned with auth.users) and ensure updates on email change via trigger.
+> - Story Nodes: Change `choice_label` to an enum type `choice_label_t AS ENUM ('A','B')` to enforce data integrity.
+> - Triggers: Add defensive checks with `RAISE EXCEPTION` and clear error codes/messages for invariant violations.
+> - Audit Logs: Introduce `audit_logs` table to track user/admin actions (actor_id, action, target_type/id, details, created_at).
+
+## Views (Analytics Basics)
+
+- `user_engagement_view`: Aggregates per-user metrics (stories_viewed, likes, comments, avg_completion) from transactional tables; read-only; refreshed on schedule if materialized.
+  - Use indexes on source tables and keep view simple for real-time reads.
+
+---
 

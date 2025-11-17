@@ -1,6 +1,30 @@
-# Features & Components to Document
+# Features To Document
 
-ეს დოკუმენტაცია აჩვენებს რა ფუნქციები, გვერდები და კომპონენტები უნდა დოკუმენტირებული იყოს `docs/features/` დირექტორიაში.
+> Updates (2025-01):
+>
+> - Tracking Table: Maintain a single table of features with source doc, status and phase for easy scanning.
+>
+> | Feature | Doc | Status | Phase |
+> | --- | --- | --- | --- |
+> | Feed Page | docs/features/feed-page.md | In Progress | Phase 2 |
+> | Landing Page | docs/features/landing-page.md | Done (MVP) | Phase 1 |
+> | Story Player | docs/features/story-player-component.md | In Progress | Phase 2 |
+> | Error/Empty States | docs/features/error-states.md | In Progress | Phase 2 |
+> | Header/Nav | docs/features/header-navigation.md | In Progress | Phase 1 |
+>
+> - Dependencies Section Template (add to each feature doc):
+>
+>   Dependencies:
+>   - Hooks: (e.g., useAuth, useTranslation)
+>   - Libraries: (e.g., React Query, Supabase JS)
+>   - Components: (e.g., Button, Card)
+>
+> - Versioning: At the end of each feature doc, add a minimal changelog table:
+>
+> | Version | Date | Changes |
+> | --- | --- | --- |
+> | 1.0 | 2025-01-XX | Initial draft |
+> | 1.1 | 2025-01-XX | Security/Perf updates |
 
 ---
 
@@ -18,12 +42,17 @@
 8. ✅ **Loading States** - `docs/features/loading-states.md`
 9. ✅ **Error States & Empty States** - `docs/features/error-states.md`
 10. ✅ **i18n Language Switcher** - `docs/features/i18n-language-switcher.md`
+11. ✅ **Select Component** - `docs/features/select-component.md`
+
+### Phase 4 (Expansion)
+
+12. ✅ **Subscription & Monetization System** - `docs/features/subscription-monetization.md` (Phase 4 - Phase 0)
 
 ### Phase 2+ (In Progress / Planned)
 
-11. ✅ **Feed Page** - `docs/features/feed-page.md` (Phase 2)
-12. ✅ **Admin Dashboard** - `docs/features/admin-dashboard.md` (Phase 3+)
-13. ✅ **Profile Page** - `docs/features/profile-page.md`
+13. ✅ **Feed Page** - `docs/features/feed-page.md` (Phase 2)
+14. ✅ **Admin Dashboard** - `docs/features/admin-dashboard.md` (Phase 3+)
+15. ✅ **Profile Page** - `docs/features/profile-page.md`
 
 ---
 
@@ -228,6 +257,12 @@
 
 ---
 
+## 📝 Project Features & Buttons Documentation
+
+- ✅ **Project Features & Buttons** - Complete documentation of all features, buttons, and actions in the project - დასრულებული
+
+---
+
 ## 📝 დოკუმენტაციის შაბლონი
 
 თითოეული feature/page/component-ისთვის უნდა შეიქმნას `docs/features/[feature-name].md` ფაილი შემდეგი სტრუქტურით:
@@ -322,4 +357,12 @@
 
 **Last Updated**: 2025-01-XX  
 **Status**: Planning document - Use this to track what needs to be documented
+
+## Landing Page Performance Tweaks (2025-01)
+
+- Added route prefetch for CTA paths in `HeroSection` (`/signup`, `/signin`)
+- Added `<link rel="preload" as="image">` for OG image in `app/head.tsx`
+- Added `<link rel="preconnect">` to site origin for faster initial connections
+- Kept global `loading.tsx` skeletons lightweight to reduce CLS
+- Use lazy loading for non-critical images (avatar already unoptimized; ensure small size)
 

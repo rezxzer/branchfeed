@@ -1,12 +1,9 @@
 # Deployment Guide
 
-This guide covers deploying BranchFeed to production.
-
-**Status**: ✅ **Ready for Deployment**  
-**Last Updated**: 2025-01-15
-
-> 📖 **For detailed production deployment instructions, see `docs/PRODUCTION_DEPLOYMENT.md`**  
-> 📋 **For quick checklist, see `docs/DEPLOYMENT_CHECKLIST.md`**
+> Updates (2025-01):
+>
+> - Rollback Plan: Include "Notify Users" step during downtime (status page, banner, Slack/Twitter).
+> - Environment Variables: Add "Secrets Rotation Policy" (e.g., quarterly rotation; rotate on incident; document owners).
 
 ---
 
@@ -23,18 +20,37 @@ This guide covers deploying BranchFeed to production.
 
 ### 2. Environment Variables
 
-Required environment variables:
+#### Required Variables (Production)
 
 ```bash
+NEXT_PUBLIC_APP_URL=https://your-domain.com
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE=your-service-role-key-here
+NEXT_PUBLIC_MAX_COMMENT_LENGTH=500
 ```
 
-**Where to find these:**
+#### Stripe Variables (Test Mode - Phase 0)
+
+**IMPORTANT**: All Stripe features are in TEST MODE. Do not enable production Stripe until ready.
+
+```bash
+STRIPE_SECRET_KEY_TEST=sk_test_...
+STRIPE_PUBLISHABLE_KEY_TEST=pk_test_...
+STRIPE_PRICE_ID_SUPPORTER=price_...
+STRIPE_PRICE_ID_PRO=price_...
+STRIPE_PRICE_ID_VIP=price_...
+STRIPE_WEBHOOK_SECRET_TEST=whsec_...
+```
+
+**Where to find Supabase credentials:**
 1. Go to [Supabase Dashboard](https://app.supabase.com)
 2. Select your project
 3. Go to **Settings** → **API**
 4. Copy **Project URL** and **anon/public key**
+5. Copy **service_role key** (server-side only, keep secret!)
+
+**See `docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md` for complete environment variables checklist.**
 
 ### 3. Code Quality
 
@@ -46,19 +62,34 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 
 ### 4. Database Migrations
 
-Verify all migrations are applied:
+Verify all migrations are applied (in order):
 
 - [ ] `20250115_01_add_profile_creation_trigger.sql` - Profile creation trigger
-- [ ] `20250115_02_add_storage_bucket_and_policies.sql` - Storage setup
+- [ ] `20250115_02_add_storage_bucket_and_policies.sql` - Stories storage bucket setup
 - [ ] `20250115_03_add_view_count_function.sql` - View count function
+- [ ] `20250115_04_add_avatars_bucket_and_policies.sql` - Avatars storage bucket setup
+- [ ] `20250115_05_add_story_stats_fields.sql` - Story statistics fields
+- [ ] `20250115_06_create_story_likes_table.sql` - Story likes table
+- [ ] `20250115_07_add_admin_system.sql` - Admin system (roles, permissions)
+- [ ] `20250115_08_add_platform_settings.sql` - Platform settings table
+- [ ] `20250115_09_add_description_to_content_reports.sql` - Content reports enhancement
+- [ ] `20250115_10_verify_admin_functions.sql` - Admin functions verification
+- [ ] `20250115_11_add_user_ban_suspend.sql` - User ban/suspend functionality
+- [ ] `20250115_12_add_banned_users_rls_policies.sql` - Banned users RLS policies
+- [ ] `20250115_13_add_comments_count_trigger.sql` - Comments count trigger
+- [ ] `20250115_14_add_total_story_views_function.sql` - Total story views function
+- [ ] `20250115_15_add_performance_indexes.sql` - Performance indexes
+- [ ] `20250115_16_add_subscriptions_schema.sql` - Subscription schema (Phase 0 - Monetization)
 
 **How to verify:**
 1. Go to Supabase Dashboard → **SQL Editor**
-2. Run: `SELECT * FROM pg_migrations;` (if migration tracking table exists)
-3. Or manually check:
-   - Functions: `SELECT routine_name FROM information_schema.routines WHERE routine_schema = 'public';`
-   - Tables: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';`
-   - Storage buckets: Check in **Storage** section
+2. Run: `SELECT routine_name FROM information_schema.routines WHERE routine_schema = 'public';` (check functions)
+3. Run: `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';` (check tables)
+4. Check Storage section for buckets (`stories`, `avatars`)
+5. See `supabase/migrations/README.md` for detailed migration information
+
+**See `docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md` for complete deployment checklist.**  
+**See `docs/DEPLOYMENT_PREPARATION_GUIDE.md` for step-by-step deployment preparation guide.**
 
 ---
 
@@ -299,10 +330,12 @@ If needed, trigger manual deployment:
 
 ## 📚 Related Documentation
 
+- **Production Deployment Checklist**: `docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md` ⭐ **Use this for production deployment**
 - **Setup**: `docs/NEW_PROJECT_SETUP.md`
 - **Operations**: `docs/OPERATIONS_PLAYBOOK.md`
 - **Storage Setup**: `docs/STORAGE_SETUP_INSTRUCTIONS.md`
 - **Migrations**: `supabase/migrations/README.md`
+- **Performance Monitoring**: `docs/PERFORMANCE_MONITORING.md`
 
 ---
 

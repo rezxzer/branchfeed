@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getRootStoriesClient } from '@/lib/stories'
 import type { Story } from '@/types'
 
 export type SortType = 'recent' | 'popular' | 'trending'
 
 const STORIES_PER_PAGE = 10
+const LOAD_MORE_DEBOUNCE_MS = 500
 
 export function useFeed() {
   const [stories, setStories] = useState<Story[]>([])
@@ -15,6 +16,7 @@ export function useFeed() {
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(1)
   const [sortBy, setSortBy] = useState<SortType>('recent')
+  const lastLoadMoreRef = useRef<number>(0)
 
   const loadFeed = useCallback(
     async (pageNum: number, sort: SortType) => {
@@ -53,6 +55,10 @@ export function useFeed() {
   }, [sortBy])
 
   const loadMore = useCallback(() => {
+    const now = Date.now()
+    if (now - lastLoadMoreRef.current < LOAD_MORE_DEBOUNCE_MS) return
+    lastLoadMoreRef.current = now
+
     if (!loading && hasMore) {
       const nextPage = page + 1
       loadFeed(nextPage, sortBy)

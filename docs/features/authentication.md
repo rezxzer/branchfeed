@@ -1,6 +1,10 @@
 # Authentication System - BranchFeed
 
-ეს დოკუმენტაცია აღწერს Authentication System-ის იმპლემენტაციას BranchFeed-ში.
+> Improvements (2025-01):
+>
+> - Server Client: Prefer `createServerComponentClient` from `@supabase/ssr` for reliable cookie handling in server components and routes.
+> - Profile Creation: Use sign-up callback to insert profile as primary path; keep DB trigger only as fallback safety net.
+> - Rate Limiting: Gate auth-related endpoints (login/signup error responses) via Supabase Edge Functions or middleware throttling to mitigate abuse.
 
 ---
 

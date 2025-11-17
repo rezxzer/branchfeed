@@ -1,9 +1,9 @@
 # Testing Guide
 
-This document describes the testing setup and strategy for BranchFeed.
-
-**Status**: ✅ **SETUP COMPLETE**  
-**Last Updated**: 2025-01-15
+> Updates (2025-01):
+>
+> - E2E: Run headless by default in CI; provide a flag for headed debug locally.
+> - Coverage: Set measurable goals (≥80% lines, ≥70% branches) for unit/integration tests; report in CI and block regressions.
 
 ---
 
@@ -239,22 +239,24 @@ See `e2e/README.md` for detailed documentation.
 ### High Priority (Core Features)
 - [x] UI Components (Button, Skeleton, etc.)
 - [x] Utility functions (cn, etc.)
-- [ ] Story creation flow
-- [ ] Story player interactions
-- [ ] Authentication flow
+- [x] Story creation flow (E2E)
+- [x] Story player interactions (E2E)
+- [x] Authentication flow (E2E)
 
 ### Medium Priority (Features)
-- [ ] Feed page functionality
-- [ ] Profile page
-- [ ] Comment system
-- [ ] Like system
-- [ ] Share functionality
+- [x] Feed page functionality (E2E)
+- [x] Profile page (E2E)
+- [ ] Comment system (integration tests needed)
+- [ ] Like system (integration tests needed)
+- [ ] Share functionality (integration tests needed)
 
 ### Low Priority (Polish)
 - [ ] Error boundaries
 - [ ] Loading states
 - [ ] Toast notifications
 - [ ] Responsive design
+
+**See `docs/TESTING_QA_CHECKLIST.md` for comprehensive pre-production testing checklist.**
 
 ---
 
@@ -295,5 +297,15 @@ node --inspect-brk node_modules/.bin/jest --runInBand
 
 ---
 
+## 🔗 Related Documentation
+
+- **Testing & QA Checklist**: `docs/TESTING_QA_CHECKLIST.md` ⭐ **Use this for pre-production testing**
+- **Production Deployment Checklist**: `docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md`
+- **E2E Tests**: `e2e/README.md`
+
+---
+
 **Note**: This is a living document. Update it as testing practices evolve.
+
+**Last Updated**: 2025-01-15
 

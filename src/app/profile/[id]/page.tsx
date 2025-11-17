@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { ProfilePageClient } from '@/components/profile/ProfilePageClient'
 import type { Profile } from '@/types'
 
@@ -25,20 +26,85 @@ async function getProfile(userId: string): Promise<Profile | null> {
     .single()
 
   if (error) {
-    console.error('Error fetching profile:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
-      userId,
-    })
-    
-    // If profile doesn't exist (PGRST116 = no rows returned)
+    // If profile doesn't exist (PGRST116 = no rows returned), try to create it
     if (error.code === 'PGRST116') {
-      console.warn(`Profile not found for user ID: ${userId}`)
-      return null
+      console.warn(`Profile not found for user ID: ${userId}, attempting to create...`)
+      
+      // Use admin client to create profile (bypasses RLS)
+      const adminClient = createAdminSupabaseClient()
+      
+      if (!adminClient) {
+        console.error('Admin client not available, cannot create profile')
+        return null
+      }
+      
+      // Try to get user from auth.users to create profile
+      const { data: authUser, error: authError } = await adminClient.auth.admin.getUserById(userId)
+      
+      let email = ''
+      let defaultUsername = `user_${userId.substring(0, 8)}`
+      
+      if (!authError && authUser?.user) {
+        email = authUser.user.email || ''
+        if (email) {
+          defaultUsername = email.split('@')[0]
+        }
+      }
+      
+      // Check if username already exists and make it unique
+      let finalUsername = defaultUsername
+      let counter = 0
+      let usernameExists = true
+      
+      while (usernameExists && counter < 100) {
+        const { data: existingProfile } = await adminClient
+          .from('profiles')
+          .select('id')
+          .eq('username', finalUsername)
+          .single()
+        
+        if (!existingProfile) {
+          usernameExists = false
+        } else {
+          counter++
+          finalUsername = `${defaultUsername}${counter}`
+        }
+      }
+      
+      // Create profile
+      const { data: newProfile, error: createError } = await adminClient
+        .from('profiles')
+        .insert({
+          id: userId,
+          username: finalUsername,
+          email: email || null,
+          language_preference: 'en',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        } as never)
+        .select()
+        .single()
+      
+      if (createError) {
+        console.error('Error creating profile:', createError)
+        return null
+      }
+      
+      return newProfile as Profile
     }
     
+    // Log error with all available information
+    const errorInfo: Record<string, unknown> = {
+      userId,
+      error: error,
+    }
+    
+    if (error.message) errorInfo.message = error.message
+    if (error.code) errorInfo.code = error.code
+    if (error.details) errorInfo.details = error.details
+    if (error.hint) errorInfo.hint = error.hint
+    
+    console.error('Error fetching profile:', errorInfo)
     return null
   }
 
@@ -76,13 +142,18 @@ async function getProfileStories(userId: string) {
     .limit(20)
 
   if (error) {
-    console.error('Error fetching profile stories:', {
-      message: error.message,
-      code: error.code,
-      details: error.details,
-      hint: error.hint,
+    // Log error with all available information
+    const errorInfo: Record<string, unknown> = {
       userId,
-    })
+      error: error,
+    }
+    
+    if (error.message) errorInfo.message = error.message
+    if (error.code) errorInfo.code = error.code
+    if (error.details) errorInfo.details = error.details
+    if (error.hint) errorInfo.hint = error.hint
+    
+    console.error('Error fetching profile stories:', errorInfo)
     return []
   }
 

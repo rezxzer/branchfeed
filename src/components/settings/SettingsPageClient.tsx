@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useTranslation } from '@/hooks/useTranslation'
 import { ProfileSettings } from './ProfileSettings'
 import { LanguageSettings } from './LanguageSettings'
+import { SubscriptionSettings } from './SubscriptionSettings'
 import { Spinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { useProfile } from '@/hooks/useProfile'
@@ -12,12 +14,21 @@ interface SettingsPageClientProps {
   userId: string
 }
 
-type SettingsTab = 'profile' | 'language'
+type SettingsTab = 'profile' | 'language' | 'subscription'
 
 export function SettingsPageClient({ userId }: SettingsPageClientProps) {
   const { t } = useTranslation()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile')
   const { profile, loading, error, updateProfile } = useProfile(userId)
+
+  // Check URL parameter for subscription tab
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'subscription') {
+      setActiveTab('subscription')
+    }
+  }, [searchParams])
 
   if (loading) {
     return (
@@ -69,6 +80,16 @@ export function SettingsPageClient({ userId }: SettingsPageClientProps) {
             >
               {t('settings.tabs.language')}
             </button>
+            <button
+              onClick={() => setActiveTab('subscription')}
+              className={`px-4 py-2 font-medium transition-colors ease-smooth ${
+                activeTab === 'subscription'
+                  ? 'text-brand-cyan border-b-2 border-brand-cyan'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Subscription
+            </button>
           </nav>
         </div>
 
@@ -82,6 +103,10 @@ export function SettingsPageClient({ userId }: SettingsPageClientProps) {
             currentLanguage={profile.language_preference}
             onUpdate={(lang) => updateProfile({ language_preference: lang })}
           />
+        )}
+
+        {activeTab === 'subscription' && (
+          <SubscriptionSettings userId={userId} />
         )}
       </div>
     </div>

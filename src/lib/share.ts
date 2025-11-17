@@ -6,6 +6,28 @@
  * Functions for sharing stories with current path
  */
 
+function getBaseUrl(): string {
+  if (typeof window !== 'undefined') return window.location.origin
+  return process.env.NEXT_PUBLIC_APP_URL || ''
+}
+
+function buildStoryUrl(storyId: string, path?: ('A' | 'B')[]): string {
+  const base = getBaseUrl()
+  const safeBase = base.replace(/\/$/, '')
+  let url = `${safeBase}/story/${storyId}`
+
+  if (path && path.length > 0) {
+    // Validate path segments strictly
+    const valid = path.every((step) => step === 'A' || step === 'B')
+    if (valid) {
+      const pathParam = path.join(',')
+      url += `?path=${pathParam}`
+    }
+  }
+
+  return url
+}
+
 /**
  * Copy story link to clipboard
  * @param storyId - Story ID
@@ -16,14 +38,7 @@ export async function copyStoryLink(
   storyId: string,
   path?: ('A' | 'B')[]
 ): Promise<void> {
-  // Build URL with path if provided
-  let url = `${window.location.origin}/story/${storyId}`
-  
-  if (path && path.length > 0) {
-    // Add path as query parameter
-    const pathParam = path.join(',')
-    url += `?path=${pathParam}`
-  }
+  const url = buildStoryUrl(storyId, path)
 
   try {
     // Use Clipboard API if available
@@ -67,13 +82,7 @@ export async function shareToSocial(
   storyId: string,
   path?: ('A' | 'B')[]
 ): Promise<void> {
-  // Build URL
-  let url = `${window.location.origin}/story/${storyId}`
-  
-  if (path && path.length > 0) {
-    const pathParam = path.join(',')
-    url += `?path=${pathParam}`
-  }
+  const url = buildStoryUrl(storyId, path)
 
   const encodedUrl = encodeURIComponent(url)
   const encodedTitle = encodeURIComponent('Check out this branching story on BranchFeed!')
@@ -117,13 +126,7 @@ export async function shareNative(
     return
   }
 
-  // Build URL
-  let url = `${window.location.origin}/story/${storyId}`
-  
-  if (path && path.length > 0) {
-    const pathParam = path.join(',')
-    url += `?path=${pathParam}`
-  }
+  const url = buildStoryUrl(storyId, path)
 
   try {
     await navigator.share({

@@ -1,27 +1,44 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { useTranslation } from '@/hooks/useTranslation'
 import { StoryPlayer } from './StoryPlayer'
 import { ChoiceButtons } from './ChoiceButtons'
 import { PathProgress } from './PathProgress'
 import { InteractionButtons } from './InteractionButtons'
-import { CommentSection } from './CommentSection'
-import { StoryTreeViewer } from './StoryTreeViewer'
-import { PathViewer } from './PathViewer'
 import { Spinner } from '@/components/ui/Spinner'
 import { StoryDetailSkeleton } from './StoryDetailSkeleton'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { useStory } from '@/hooks/useStory'
 import { usePathTracking } from '@/hooks/usePathTracking'
-import { incrementStoryViews } from '@/lib/stories'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
-import { ShareStoryButton } from './ShareStoryButton'
+import { StoryStatsBar } from './StoryStatsBar'
 import { encodePath, decodePath } from '@/lib/pathSharing'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
+import { useToast } from '@/components/ui/toast'
+
+// Lazy load non-critical components for code splitting
+const CommentSection = dynamic(() => import('./CommentSection').then(mod => ({ default: mod.CommentSection })), {
+  loading: () => <div className="mt-8"><Spinner size="md" /></div>,
+});
+
+const StoryTreeViewer = dynamic(() => import('./StoryTreeViewer').then(mod => ({ default: mod.StoryTreeViewer })), {
+  loading: () => <div className="mt-8"><Spinner size="md" /></div>,
+  ssr: false,
+});
+
+const PathViewer = dynamic(() => import('./PathViewer').then(mod => ({ default: mod.PathViewer })), {
+  loading: () => <div className="mt-8"><Spinner size="md" /></div>,
+  ssr: false,
+});
+
+const ShareStoryButton = dynamic(() => import('./ShareStoryButton').then(mod => ({ default: mod.ShareStoryButton })), {
+  ssr: false,
+});
 
 interface StoryDetailPageClientProps {
   storyId: string
@@ -34,12 +51,25 @@ export function StoryDetailPageClient({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const { currentPath, currentDepth, makeChoice, loadExistingPath, setPathFromUrl } =
     usePathTracking(storyId)
   const { story, currentNode, loading, error } = useStory(
     storyId,
     currentPath
   )
+
+  // Local state for views count (updated from API)
+  const [viewsCount, setViewsCount] = useState<number>(0)
+
+  // Local state for likes count (updated from API)
+  const [likesCount, setLikesCount] = useState<number>(0)
+
+  // Local state for liked status (updated from API)
+  const [isLiked, setIsLiked] = useState<boolean>(false)
+
+  // Loading state for like operation
+  const [isLiking, setIsLiking] = useState<boolean>(false)
 
   // Track if this is the initial mount to avoid updating URL on initial load
   const isInitialMount = useRef(true)
@@ -120,15 +150,179 @@ export function StoryDetailPageClient({
     }
   }, [currentPath, pathname, router, searchParams])
 
-  // Increment view count when story is loaded
+  // Initialize views count from story data
+  useEffect(() => {
+    if (story?.views_count !== undefined) {
+      setViewsCount(story.views_count)
+    }
+  }, [story?.views_count])
+
+  // Initialize likes count from story data
+  useEffect(() => {
+    if (story?.likes_count !== undefined) {
+      setLikesCount(story.likes_count ?? 0)
+    }
+  }, [story?.likes_count])
+
+  // Initialize liked status from story data
+  useEffect(() => {
+    if (story?.userHasLiked !== undefined) {
+      setIsLiked(story.userHasLiked)
+    }
+  }, [story?.userHasLiked])
+
+  // Increment view count via API when story is loaded
+  // TODO: Add smarter view de-duplication (per user/session) in a future task
   useEffect(() => {
     if (story?.id) {
-      // Increment view count (fire and forget - don't wait for it)
-      incrementStoryViews(story.id).catch((err) => {
-        console.error('Error incrementing view count:', err)
+      // Call API to increment views
+      fetch(`/api/stories/${story.id}/view`, {
+        method: 'POST',
       })
+        .then(async (response) => {
+          // Handle 403 (Forbidden) - subscription limit exceeded
+          if (response.status === 403) {
+            const errorData = await response.json().catch(() => ({}))
+            const errorMessage = errorData.error || 'Daily view limit reached'
+            const remaining = errorData.remaining
+            let message = errorMessage
+            if (remaining !== undefined && remaining !== -1) {
+              message = `${errorMessage} (${remaining} remaining)`
+            }
+            showToast(
+              `${message}. Upgrade your subscription to increase limits.`,
+              'error',
+              5000
+            )
+            return null // Don't update views count
+          }
+
+          if (!response.ok) {
+            // Try to get error message from response
+            let errorMessage = `HTTP error! status: ${response.status}`
+            try {
+              const errorData = await response.json()
+              if (errorData.error) {
+                errorMessage = errorData.error
+              }
+            } catch {
+              // If response is not JSON, use default message
+            }
+            throw new Error(errorMessage)
+          }
+          return response.json()
+        })
+        .then((data: { viewsCount: number } | null) => {
+          // Update local state with new views count (only if not null)
+          if (data && typeof data.viewsCount === 'number') {
+            setViewsCount(data.viewsCount)
+          }
+        })
+        .catch((err) => {
+          console.error('Error incrementing view count:', err)
+          // Don't update state on error - keep existing value
+          // View increment is non-critical, so we silently fail (unless it's a limit error)
+        })
     }
-  }, [story?.id])
+  }, [story?.id, showToast])
+
+  // Handle like click with toggle logic
+  const handleLikeClick = async () => {
+    if (!story?.id || isLiking) {
+      return
+    }
+
+    setIsLiking(true)
+
+    try {
+      // Call API to toggle like
+      const response = await fetch(`/api/stories/${story.id}/like`, {
+        method: 'POST',
+      })
+
+      // Handle 401 (Unauthorized) - user not authenticated
+      if (response.status === 401) {
+        showToast('Sign in to like stories', 'warning')
+        setIsLiking(false)
+        return
+      }
+
+      // Handle 400 (Bad Request) - profile not found
+      if (response.status === 400) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || 'Profile setup required'
+        showToast(errorMessage, 'warning')
+        setIsLiking(false)
+        return
+      }
+
+      // Handle 403 (Forbidden) - subscription limit exceeded
+      if (response.status === 403) {
+        const errorData = await response.json().catch(() => ({}))
+        const errorMessage = errorData.error || 'Daily like limit reached'
+        const remaining = errorData.remaining
+        let message = errorMessage
+        if (remaining !== undefined && remaining !== -1) {
+          message = `${errorMessage} (${remaining} remaining)`
+        }
+        showToast(
+          `${message}. Upgrade your subscription to increase limits.`,
+          'error',
+          5000
+        )
+        setIsLiking(false)
+        return
+      }
+
+      if (!response.ok) {
+        // Try to get error message from response
+        let errorMessage = `HTTP error! status: ${response.status}`
+        try {
+          const errorData = await response.json()
+          if (errorData.error) {
+            errorMessage = errorData.error
+          }
+        } catch {
+          // If response is not JSON, use default message
+        }
+        throw new Error(errorMessage)
+      }
+
+      const data: { likesCount: number; liked: boolean } = await response.json()
+
+      // Update state with actual values from server
+      if (typeof data.likesCount === 'number') {
+        setLikesCount(data.likesCount)
+      }
+      if (typeof data.liked === 'boolean') {
+        setIsLiked(data.liked)
+      }
+
+      // Show success toast
+      if (data.liked) {
+        showToast('Added to your likes', 'success')
+      } else {
+        showToast('Removed from your likes', 'info')
+      }
+    } catch (err: any) {
+      console.error('Error toggling like:', err)
+      
+      // Check if it's a subscription limit error
+      if (err.limitExceeded || err.message?.includes('limit') || err.message?.includes('Limit')) {
+        const errorMessage = err.message || 'Daily like limit reached'
+        showToast(
+          `${errorMessage}. Upgrade your subscription to increase limits.`,
+          'error',
+          5000
+        )
+      } else {
+        showToast('Something went wrong. Please try again.', 'error')
+      }
+      // Keep current state on error - no rollback needed since we don't do optimistic updates
+    } finally {
+      setIsLiking(false)
+    }
+  }
 
   const handleChoice = async (choice: 'A' | 'B') => {
     // Make choice and update path
@@ -274,16 +468,30 @@ export function StoryDetailPageClient({
           )}
         </div>
 
+        {/* Story Stats Bar */}
+        {story && (
+          <div className="mt-6">
+            <StoryStatsBar
+              pathsCount={story.paths_count ?? 0}
+              viewsCount={viewsCount}
+              likesCount={story.likes_count ?? 0}
+            />
+          </div>
+        )}
+
         {/* Interactions - Always show, even for mock data */}
         {story && (
           <div className="mt-8">
             <InteractionButtons
               storyId={story.id}
-              likesCount={story.likes_count || 0}
-              viewsCount={story.views_count || 0}
+              likesCount={likesCount}
+              viewsCount={viewsCount}
               commentsCount={story.comments_count || 0}
               currentPath={currentPath}
               storyTitle={story.title}
+              onLikeClick={handleLikeClick}
+              isLiked={isLiked}
+              isLiking={isLiking}
             />
           </div>
         )}

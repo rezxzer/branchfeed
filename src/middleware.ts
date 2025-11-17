@@ -48,7 +48,47 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session if expired
-  await supabase.auth.getUser()
+  const { data: userResult } = await supabase.auth.getUser()
+
+  // Check banned/suspended for protected routes
+  const pathname = request.nextUrl.pathname
+  const method = request.method.toUpperCase()
+
+  const isProtectedPage = pathname.startsWith('/create')
+  const isApiRoute = pathname.startsWith('/api')
+  const isWriteApi = isApiRoute && method !== 'GET'
+
+  if (userResult?.user && (isProtectedPage || isWriteApi)) {
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('banned_at, suspended_until')
+      .eq('id', userResult.user.id)
+      .maybeSingle()
+
+    if (!profileError && profile) {
+      const bannedAt = profile.banned_at as string | null
+      const suspendedUntil = profile.suspended_until as string | null
+      const now = Date.now()
+      const isBanned = Boolean(bannedAt)
+      const isSuspended = suspendedUntil ? new Date(suspendedUntil).getTime() > now : false
+
+      if (isBanned || isSuspended) {
+        if (isApiRoute) {
+          return new NextResponse(
+            JSON.stringify({ error: 'Forbidden: account restricted' }),
+            {
+              status: 403,
+              headers: { 'Content-Type': 'application/json' },
+            }
+          )
+        }
+        const url = request.nextUrl.clone()
+        url.pathname = '/'
+        url.searchParams.set('restricted', isBanned ? 'banned' : 'suspended')
+        return NextResponse.redirect(url)
+      }
+    }
+  }
 
   return response
 }
@@ -61,7 +101,7 @@ export const config = {
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
 

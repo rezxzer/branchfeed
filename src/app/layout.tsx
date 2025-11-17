@@ -6,6 +6,8 @@ import { ToastProvider } from '@/components/ui/toast'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { siteConfig } from '@/config/site'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: {

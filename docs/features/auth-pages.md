@@ -1,6 +1,10 @@
-# Sign Up / Sign In Pages - BranchFeed
+# Auth Pages (Sign In / Sign Up)
 
-ეს დოკუმენტაცია აღწერს Sign Up და Sign In გვერდების იმპლემენტაციას BranchFeed-ში.
+> Improvements (2025-01):
+>
+> - Back to Home: Add a lightweight "← Home" link in the auth header for quick navigation to `/`.
+> - Strong Password: Enforce stronger regex (e.g., `/(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*])/`) and localized error messages.
+> - Client-Side Guard: In addition to middleware, verify session on mount to handle expired sessions and redirect to `/feed` if already authenticated.
 
 ---
 

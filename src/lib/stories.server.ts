@@ -16,7 +16,7 @@ import type { Story } from '@/types'
  * Get story by ID (server-side)
  * Use this in Server Components and Server Actions
  * @param storyId - Story ID
- * @returns Story with author profile
+ * @returns Story with author profile and userHasLiked status
  */
 export async function getStoryById(storyId: string): Promise<Story | null> {
   const supabase = await createServerSupabaseClient()
@@ -25,6 +25,11 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
     console.error('Supabase client is null. Check environment variables.')
     return null
   }
+
+  // Get current user to check like status
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   const { data, error } = await supabase
     .from('stories')
@@ -46,7 +51,23 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
     return null
   }
 
-  return data as Story
+  const story = data as Story
+
+  // Check if current user has liked this story
+  if (user) {
+    const { data: likeData } = await supabase
+      .from('story_likes')
+      .select('id')
+      .eq('story_id', storyId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    story.userHasLiked = !!likeData
+  } else {
+    story.userHasLiked = false
+  }
+
+  return story
 }
 
 /**

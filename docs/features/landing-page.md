@@ -429,17 +429,17 @@ Landing Page-ის ტექსტები უნდა იყოს:
 
 ## ✅ Requirements Checklist
 
-- [ ] Landing page route (`/`) implemented
-- [ ] Header component integrated
-- [ ] HeroSection component created
-- [ ] FeaturesSection component created
-- [ ] CTA buttons (Sign Up, Sign In) working
-- [ ] Redirect to feed if already authenticated
-- [ ] Responsive design (mobile, tablet, desktop)
-- [ ] i18n translations added
-- [ ] Visual elements (placeholder or actual)
-- [ ] Error handling
-- [ ] Loading states (if needed)
+- [x] Landing page route (`/`) implemented
+- [x] Header component integrated
+- [x] HeroSection component created
+- [x] FeaturesSection component created
+- [x] CTA buttons (Sign Up, Sign In) working
+- [x] Redirect to feed if already authenticated
+- [x] Responsive design (mobile, tablet, desktop)
+- [x] i18n translations added
+- [x] Visual elements (placeholder or actual)
+- [x] Error handling
+- [x] Loading states (if needed)
 
 ---
 
@@ -499,4 +499,14 @@ Phase 1-ში Landing Page რომ ჩავთვალოთ დასრ�
 **Last Updated**: 2025-01-XX  
 **Version**: 1.0  
 **Status**: Phase 1 (Foundation) - Critical Priority
+
+---
+
+## Improvements (2025-01)
+
+- Redirect Edge Case: In addition to server redirect on `/`, verify session validity in middleware to handle expired sessions gracefully.
+- Hero Visual: Replace placeholder emoji with SVG/`next/image` asset, lazy-loaded; keep explicit width/height to avoid CLS.
+- Responsive CTA: Ensure hero has `max-h-screen` and CTA remains within first viewport on small screens.
+
+---
 

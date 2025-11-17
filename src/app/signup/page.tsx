@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useTranslation } from '@/hooks/useTranslation'
-import { Header } from '@/components/Header'
 import { Input } from '@/components/ui/Input'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
@@ -12,6 +11,8 @@ import Link from 'next/link'
 
 export default function SignUpPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams?.get('redirectTo') || ''
   const { signUp, isAuthenticated, loading: authLoading } = useAuth()
   const { t } = useTranslation()
 
@@ -21,12 +22,16 @@ export default function SignUpPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(false)
 
+  const STRONG_PASSWORD = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*]).{8,}$/
+
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       router.push('/feed')
     }
   }, [isAuthenticated, authLoading, router])
+
+  const isSafeRedirect = (url: string) => typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -42,6 +47,8 @@ export default function SignUpPage() {
     if (!password) {
       newErrors.password = t('auth.errors.passwordRequired')
     } else if (password.length < 8) {
+      newErrors.password = t('auth.errors.weakPassword')
+    } else if (!STRONG_PASSWORD.test(password)) {
       newErrors.password = t('auth.errors.weakPassword')
     }
 
@@ -69,7 +76,8 @@ export default function SignUpPage() {
     const result = await signUp(email, password)
 
     if (result.success) {
-      router.push('/feed')
+      const target = isSafeRedirect(redirectTo) ? redirectTo : '/feed'
+      router.push(target)
     } else {
       // Map Supabase errors to user-friendly messages
       let errorMessage = t('auth.errors.networkError')
@@ -102,7 +110,6 @@ export default function SignUpPage() {
 
   return (
     <div className="min-h-screen bg-gray-900">
-      <Header />
       <div className="flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-level-2 border border-gray-700/50 p-8">
@@ -191,7 +198,7 @@ export default function SignUpPage() {
               <p className="text-sm text-gray-300">
                 {t('auth.signUp.alreadyHaveAccount')}{' '}
                 <Link
-                  href="/signin"
+                  href={redirectTo ? `/signin?redirectTo=${encodeURIComponent(redirectTo)}` : '/signin'}
                   className="text-brand-cyan hover:text-brand-cyan/80 font-medium transition-colors ease-smooth"
                 >
                   {t('auth.signUp.signInLink')}

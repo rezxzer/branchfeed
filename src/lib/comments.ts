@@ -17,7 +17,7 @@ export interface Comment {
   }
 }
 
-const MAX_COMMENT_LENGTH = 500
+const MAX_COMMENT_LENGTH = Number(process.env.NEXT_PUBLIC_MAX_COMMENT_LENGTH || 500)
 
 /**
  * Add a comment to a story
@@ -38,51 +38,26 @@ export async function addComment(
     throw new Error('User not authenticated')
   }
 
-  // Validate content
-  const trimmedContent = content.trim()
-  if (!trimmedContent) {
-    throw new Error('Comment cannot be empty')
-  }
-  if (trimmedContent.length > MAX_COMMENT_LENGTH) {
-    throw new Error(`Comment cannot exceed ${MAX_COMMENT_LENGTH} characters`)
-  }
+  // Check subscription limit via API route (server-side check)
+  try {
+    const response = await fetch('/api/comments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ storyId, content }),
+    });
 
-  const { data: comment, error } = await supabase
-    .from('comments')
-    .insert({
-      story_id: storyId,
-      node_id: null,
-      user_id: user.id,
-      content: trimmedContent,
-    })
-    .select(
-      `
-      *,
-      author:profiles(
-        id,
-        username,
-        avatar_url
-      )
-    `
-    )
-    .single()
-
-  if (error) {
-    // If table doesn't exist, throw error
-    if (
-      error.code === 'PGRST116' ||
-      error.code === '42P01' || // PostgreSQL: relation does not exist
-      error.message?.includes('relation') ||
-      error.message?.includes('does not exist') ||
-      error.message?.includes('table')
-    ) {
-      console.warn('Comments table not found. Database setup may be needed.')
-      throw new Error('Comments table not found. Please check database setup.')
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to create comment');
     }
-    throw new Error(`Add comment failed: ${error.message}`)
-  }
 
-  return comment as Comment
+    const { comment } = await response.json();
+    return comment as Comment;
+  } catch (error: any) {
+    // If API route fails, throw the error (don't fall back to direct insert)
+    // This ensures subscription limits are always enforced
+    throw error;
+  }
 }
 
 /**

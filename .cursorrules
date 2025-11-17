@@ -3,7 +3,7 @@
 ## Language & Communication
 
 - **Code & Comments**: All code (variables, functions, comments, UI strings) must be in English
-- **Chat Responses**: All chat responses must be in Georgian
+- **Chat Responses (CRITICAL)**: ALL chat responses from the AI assistant MUST ALWAYS be in Georgian, regardless of what language the user writes in. This is a strict rule with no exceptions.
 - **Documentation**: Markdown files can be in Georgian or English, but consistent
 - **No Georgian in Code/SQL/Filenames**: Code, file names and SQL must not contain Georgian characters
 

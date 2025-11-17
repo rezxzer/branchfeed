@@ -1,6 +1,11 @@
 # UI Style Guide - BranchFeed
 
-ეს დოკუმენტაცია განსაზღვრავს UI-ის სტილს, ღილაკების დიზაინს, ფერებს, typography-ს და სხვა დიზაინის ელემენტებს.
+> Improvements (2025-01):
+>
+> - Theme: Support Dark/Light toggle (Dark as default). Use CSS variables (e.g., `--bg-surface`, `--text-primary`) and ensure both themes meet WCAG AA. Remove "Dark-only" constraints; provide Light equivalents.
+> - Gradients: Provide solid-color fallbacks (e.g., `--gradient-brand-fallback: #4f46e5`) for older browsers and reduce jank.
+> - Typography: Ensure font stacks include safe fallbacks: `--font-sans: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial, sans-serif`.
+> - Security Considerations: Document CSP recommendations for Tailwind (allow only required sources), sanitize user-rendered text, and avoid inline event handlers in components.
 
 ---
 
@@ -16,7 +21,7 @@ BranchFeed არის ინტერაქტიული branching stories �
 
 ### ძირითადი ფერები
 
-- **იასამნისფერი + ინდიگو + ციანი** – branch-ების ხაზგასმისთვის
+- **იასამნისფერი + ინდიگო + ციანი** – branch-ების ხაზგასმისთვის
 - **Neon gradients** – choice ღილაკებზე და ჰედერზე
 - **Dark backgrounds** – video content-ისთვის
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { siteConfig } from '@/config/site'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'About | BranchFeed',
@@ -67,40 +68,28 @@ export default function AboutPage() {
             <li>• Next.js 15 (App Router) with TypeScript</li>
             <li>• Supabase for database, auth and storage</li>
             <li>• Tailwind CSS for the UI design system</li>
-            <li>• Deployed on Vercel with CI from GitHub</li>
+            <li>• Deployed on Vercel</li>
           </ul>
         </div>
       </section>
 
       <section className="space-y-4 rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
         <h2 className="text-lg font-semibold text-slate-50">
-          Project links
+          Get started
         </h2>
         <div className="flex flex-wrap gap-3 text-sm">
-          <a
-            href="https://branchfeed.vercel.app"
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            href="/signup"
             className="rounded-xl border border-emerald-500/70 bg-emerald-500/10 px-4 py-2 font-medium text-emerald-300 hover:border-emerald-400 hover:bg-emerald-500/20"
           >
-            Live app
-          </a>
-          <a
-            href="https://github.com/rezxzer/branchfeed"
-            target="_blank"
-            rel="noreferrer"
+            Create your account
+          </Link>
+          <Link
+            href="/signin"
             className="rounded-xl border border-slate-600 px-4 py-2 font-medium text-slate-200 hover:border-slate-400 hover:bg-slate-900"
           >
-            GitHub repository
-          </a>
-          <a
-            href="https://github.com/rezxzer/branchfeed/tree/main/docs"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-xl border border-slate-600 px-4 py-2 font-medium text-slate-200 hover:border-slate-400 hover:bg-slate-900"
-          >
-            Documentation (docs/)
-          </a>
+            Sign in
+          </Link>
         </div>
       </section>
 
@@ -109,10 +98,9 @@ export default function AboutPage() {
           About the creator
         </h2>
         <p>
-          BranchFeed is a personal learning project by Rezi, focused on modern
-          web development, product thinking and interactive storytelling. The
-          goal is to explore how creators can build richer stories on the web,
-          not just static timelines.
+          BranchFeed is a personal learning project focused on modern web development,
+          product thinking and interactive storytelling. The goal is to explore how creators
+          can build richer stories on the web, not just static timelines.
         </p>
       </section>
     </main>

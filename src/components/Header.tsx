@@ -7,6 +7,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useProfile } from '@/hooks/useProfile'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useAdmin } from '@/hooks/useAdmin'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Button } from './ui/Button'
 import { cn } from '@/lib/utils'
@@ -17,6 +18,7 @@ export function Header() {
   const { user, signOut, isAuthenticated, loading } = useAuth()
   const { profile } = useProfile(user?.id || '')
   const { t } = useTranslation()
+  const { isAdmin } = useAdmin()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
@@ -27,6 +29,20 @@ export function Header() {
     await signOut()
     router.push('/')
     setUserMenuOpen(false)
+  }
+
+  const scrollToFeatures: React.MouseEventHandler<HTMLAnchorElement> = (e) => {
+    if (pathname === '/') {
+      e.preventDefault()
+      const el = typeof document !== 'undefined' ? document.getElementById('features') : null
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    } else {
+      // navigate to landing with hash
+      e.preventDefault()
+      router.push('/#features')
+    }
   }
 
   return (
@@ -44,7 +60,7 @@ export function Header() {
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-6">
+          <nav className="hidden md:flex items-center space-x-6" role="navigation" aria-label="Main navigation">
             {!isAuthPage && (
               <>
                 {isAuthenticated && (
@@ -57,6 +73,8 @@ export function Header() {
                           ? 'text-brand-cyan bg-brand-iris/20'
                           : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
                       )}
+                      aria-label={pathname === '/feed' ? 'Feed (current page)' : 'Go to Feed'}
+                      aria-current={pathname === '/feed' ? 'page' : undefined}
                     >
                       {t('header.feed')}
                     </Link>
@@ -68,8 +86,43 @@ export function Header() {
                           ? 'text-brand-cyan bg-brand-iris/20'
                           : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
                       )}
+                      aria-label={pathname === '/create' ? 'Create story (current page)' : 'Create a new story'}
+                      aria-current={pathname === '/create' ? 'page' : undefined}
                     >
                       {t('header.create')}
+                    </Link>
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        className={cn(
+                          'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                          pathname?.startsWith('/admin')
+                            ? 'text-yellow-400 bg-yellow-400/20'
+                            : 'text-gray-300 hover:bg-gray-800 hover:text-yellow-400'
+                        )}
+                        aria-label={pathname?.startsWith('/admin') ? 'Admin dashboard (current page)' : 'Go to Admin dashboard'}
+                        aria-current={pathname?.startsWith('/admin') ? 'page' : undefined}
+                      >
+                        👑 Admin
+                      </Link>
+                    )}
+                  </>
+                )}
+                {/* Public navigation (optional) */}
+                {!isAuthenticated && (
+                  <>
+                    <Link
+                      href="#features"
+                      onClick={scrollToFeatures}
+                      className={cn(
+                        'px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                        pathname === '/'
+                          ? 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                          : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                      )}
+                      aria-label="View features section"
+                    >
+                      Features
                     </Link>
                   </>
                 )}
@@ -81,6 +134,8 @@ export function Header() {
                       ? 'text-brand-cyan bg-brand-iris/20'
                       : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
                   )}
+                  aria-label={pathname === '/about' ? 'About (current page)' : 'Learn more about BranchFeed'}
+                  aria-current={pathname === '/about' ? 'page' : undefined}
                 >
                   About
                 </Link>
@@ -104,14 +159,14 @@ export function Header() {
                     >
                       {t('header.signIn')}
                     </Link>
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => router.push('/signup')}
-                className="shadow-sm"
-              >
-                {t('header.signUp')}
-              </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => router.push('/signup')}
+                      className="shadow-sm"
+                    >
+                      {t('header.signUp')}
+                    </Button>
                   </div>
                 )}
 
@@ -120,7 +175,14 @@ export function Header() {
                     <button
                       onClick={() => setUserMenuOpen(!userMenuOpen)}
                       className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors ease-smooth"
-                      aria-label="User menu"
+                      aria-label={`User menu for ${profile?.username || user?.email?.split('@')[0] || 'User'}`}
+                      aria-expanded={userMenuOpen}
+                      aria-haspopup="true"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape' && userMenuOpen) {
+                          setUserMenuOpen(false)
+                        }
+                      }}
                     >
                       {profile?.avatar_url ? (
                         <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-700 flex-shrink-0">
@@ -144,12 +206,23 @@ export function Header() {
                     </button>
 
                     {userMenuOpen && (
-                      <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-level-2 z-50">
+                      <div 
+                        className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-level-2 z-50"
+                        role="menu"
+                        aria-label="User account menu"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape') {
+                            setUserMenuOpen(false)
+                          }
+                        }}
+                      >
                         <div className="py-1">
                           <Link
                             href="/profile"
                             onClick={() => setUserMenuOpen(false)}
                             className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                            role="menuitem"
+                            aria-label="View your profile"
                           >
                             {t('header.profile')}
                           </Link>
@@ -157,12 +230,27 @@ export function Header() {
                             href="/settings"
                             onClick={() => setUserMenuOpen(false)}
                             className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                            role="menuitem"
+                            aria-label="Open settings"
                           >
                             {t('header.settings')}
                           </Link>
+                          {isAdmin && (
+                            <Link
+                              href="/admin"
+                              onClick={() => setUserMenuOpen(false)}
+                              className="block px-4 py-2 text-sm text-yellow-400 hover:bg-gray-700 transition-colors ease-smooth"
+                              role="menuitem"
+                              aria-label="Go to admin dashboard"
+                            >
+                              👑 Admin
+                            </Link>
+                          )}
                           <button
                             onClick={handleSignOut}
                             className="w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                            role="menuitem"
+                            aria-label="Sign out of your account"
                           >
                             {t('header.signOut')}
                           </button>
@@ -177,7 +265,14 @@ export function Header() {
                   <button
                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     className="md:hidden p-2 rounded-lg hover:bg-gray-800 transition-colors ease-smooth"
-                    aria-label="Mobile menu"
+                    aria-label={mobileMenuOpen ? 'Close mobile menu' : 'Open mobile menu'}
+                    aria-expanded={mobileMenuOpen}
+                    aria-controls="mobile-menu"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape' && mobileMenuOpen) {
+                        setMobileMenuOpen(false)
+                      }
+                    }}
                   >
                     <svg
                       className="w-6 h-6 text-gray-300"
@@ -203,7 +298,17 @@ export function Header() {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && !isAuthPage && (
-          <div className="md:hidden border-t border-gray-700/50 py-4">
+          <div 
+            id="mobile-menu"
+            className="md:hidden border-t border-gray-700/50 py-4"
+            role="menu"
+            aria-label="Mobile navigation menu"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setMobileMenuOpen(false)
+              }
+            }}
+          >
             <div className="flex flex-col space-y-2">
               {isAuthenticated && (
                 <>
@@ -245,12 +350,35 @@ export function Header() {
                   >
                     {t('header.settings')}
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="px-4 py-2 rounded-lg text-sm font-medium text-yellow-400 hover:bg-gray-700 transition-colors ease-smooth"
+                    >
+                      👑 Admin
+                    </Link>
+                  )}
                   <button
                     onClick={handleSignOut}
                     className="w-full text-left px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
                   >
                     {t('header.signOut')}
                   </button>
+                </>
+              )}
+              {!isAuthenticated && (
+                <>
+                  <Link
+                    href="#features"
+                    onClick={(e) => {
+                      scrollToFeatures(e)
+                      setMobileMenuOpen(false)
+                    }}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                  >
+                    Features
+                  </Link>
                 </>
               )}
               <Link

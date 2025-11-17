@@ -189,6 +189,32 @@ export function CreateStoryPageClient() {
                 <p className="text-sm text-red-300 whitespace-pre-line">
                   {error.message || 'An unexpected error occurred. Please try again.'}
                 </p>
+                {(error as any).limitExceeded && (
+                  <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                    <p className="text-sm text-yellow-300 mb-2">
+                      <strong>Subscription Limit Reached</strong>
+                    </p>
+                    {(error as any).remaining !== undefined && (error as any).remaining !== -1 && (
+                      <p className="text-xs text-yellow-200/80">
+                        Remaining: {(error as any).remaining}
+                      </p>
+                    )}
+                    {(error as any).maxBranches !== undefined && (
+                      <p className="text-xs text-yellow-200/80">
+                        Maximum branches per story: {(error as any).maxBranches}
+                      </p>
+                    )}
+                    <p className="text-xs text-yellow-200/80 mt-2">
+                      Upgrade your subscription to increase limits or wait for the limit to reset.
+                    </p>
+                    <button
+                      onClick={() => router.push('/settings?tab=subscription')}
+                      className="mt-2 px-3 py-1.5 text-xs font-semibold bg-yellow-500/20 text-yellow-300 rounded-lg hover:bg-yellow-500/30 transition-colors"
+                    >
+                      View Subscription Plans
+                    </button>
+                  </div>
+                )}
                 {error.message?.includes('Bucket not found') && (
                   <p className="text-xs text-red-200/80 mt-2">
                     Tip: Make sure the storage bucket is created in Supabase Dashboard.

@@ -399,3 +399,33 @@ This MVP document defines the **essential features only** for BranchFeed's initi
 **Full Vision**: See `docs/PROJECT_OVERVIEW.md` for complete BranchFeed vision and future features.
 
 **Priority Order**: See `docs/PROJECT_PRIORITIES.md` for detailed phase-by-phase implementation plan.
+
+# Essential Features
+
+> Updates (2025-01)
+>
+> - Deployment Pipeline: Vercel + GitHub CI; preview deployments for PRs; protected envs.
+> - Global Error Page: Provide `/error` route + `app/error.tsx` boundary; consistent UX/messages.
+> - Toast Notifications: Standardize `Toast` component and usage guidelines (success/error/info) with i18n keys.
+> - Timeline Estimates: Per phase high-level estimates for planning.
+
+## Deployment Pipeline (MVP)
+- Host on Vercel; auto-deploy `main` to production, branches to preview.
+- Required checks: build, lint, basic smoke tests.
+- Secrets via Vercel env; no secrets in repo.
+
+## Global Error Page & Boundary
+- `app/error.tsx` handles runtime errors with reset.
+- `/error` static page for fallback navigation.
+- Log non-PII details; guide users to retry or contact.
+
+## Toast Component
+- Variants: `success`, `error`, `info`.
+- Usage: short messages (<80 chars), auto-dismiss 3–5s, accessible (role="status").
+- i18n: `toast.common.saved`, `toast.common.failed`.
+
+## Timeline (Estimates)
+- Phase 1 (Foundation): 2–3 weeks
+- Phase 2 (Core Features): 3–4 weeks
+- Phase 3 (Growth/Settings): 3–5 weeks
+- Phase 4 (Expansion): 4+ weeks (analytics, monetization)

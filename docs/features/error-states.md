@@ -1,6 +1,9 @@
-# Error States & Empty States - BranchFeed
+# Error & Empty States
 
-ეს დოკუმენტაცია აღწერს Error States და Empty States კომპონენტების იმპლემენტაციას BranchFeed-ში.
+> Updates (2025-01):
+>
+> - Theme: States must adapt to Dark/Light themes via design tokens. Keep Dark as default; provide Light palette equivalents (e.g., `--error-foreground-light`, `--surface-light`).
+> - i18n Keys: Prefer generalized namespaces, e.g., `emptyStates.feed.noContent.*` instead of `noPosts`, and `errorStates.common.network`/`retry` for reuse.
 
 ---
 

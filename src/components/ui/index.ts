@@ -9,5 +9,7 @@ export { Label, type LabelProps } from './Label'
 export { Textarea, type TextareaProps } from './Textarea'
 export { LikeButton, type LikeButtonProps } from './LikeButton'
 export { Skeleton } from './Skeleton'
+export { Select } from './Select'
+export type { SelectProps } from './Select'
 export { Progress } from './Progress'
 

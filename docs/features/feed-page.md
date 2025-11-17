@@ -700,3 +700,49 @@ When implementing Feed Page in Cursor:
 **Version**: 1.0  
 **Status**: Phase 2 (Core Features) - High Priority
 
+---
+
+## 🔐 Security Considerations (Phase 2)
+
+- CSRF/XSS: Harden headers (e.g., next-safe/middleware or secure headers) and sanitize any user-rendered text in cards.
+- Auth Guard: `/feed` protected by middleware + server redirect; never fetch with service role on client.
+- Rate Limiting: Apply per-user request throttling for feed fetch (API route or Supabase edge function layer) to avoid abuse.
+- Privacy: If storing user progress/likes, document data retention and allow user deletion per privacy regulations.
+
+## 🚀 Performance Optimizations
+
+- Caching Strategy: Use React Query (or equivalent) for client caching and background refetch; consider ISR/revalidate for server-side lists when feasible.
+- Image Optimization: Thumbnails via `next/image` with lazy loading and explicit sizes; prefer WebP/AVIF where possible.
+- Pagination UX: Keep Load More for MVP; debounce subsequent fetches; prefetch next page when nearing viewport end.
+- Database: Keep indexes on `(created_at DESC)` and `(author_id, created_at)`; periodically EXPLAIN ANALYZE critical queries.
+
+## 🎨 UX / Accessibility Improvements
+
+- Skeletons: Display 6–9 skeleton StoryCards during initial load for better perceived performance.
+- A11y: Add ARIA labels to interactive controls (like, share) and ensure keyboard navigation works across cards.
+- Microcopy: Show comment count teaser (e.g., “12 comments”) when available to encourage engagement.
+- Dark Mode: Ensure card/contrast tokens meet WCAG AA in both themes.
+
+## ➕ MVP+ / Phase 3 Additions
+
+- Search: Simple search by title/author; server-side filtering with safe LIKE/ILIKE and index support.
+- Personalization: “Recommended for you” using likes/progress; keep behind a feature flag initially.
+- Analytics: Hook basic events (card view, click, load more) to the analytics provider.
+- Error Monitoring: Integrate Sentry/LogRocket for client error tracking on feed interactions.
+- i18n Enhancements: Optional auto-detect language from browser with user override.
+
+## 📚 Documentation Enhancements
+
+- Visuals: Add screenshots/diagrams for layout and states (loading/empty/error).
+- Dependencies: List key libs used (Next.js App Router, Supabase JS, React Query, TailwindCSS).
+- Versioning: Maintain a small changelog for feed-related updates.
+- API Docs: Document any API routes or edge functions used for feed with request/response shapes.
+
+---
+
+**Next Action Items (Track in Issues/TODOs)**
+- Implement skeleton loaders in `FeedPageClient`.
+- Add ARIA labels and keyboard navigation checks to `StoryCard`.
+- Switch thumbnails to `next/image` with sizes attribute.
+- Add debounce to "Load More" and optional prefetch of next page.
+- Add React Query caching layer for feed fetching.
