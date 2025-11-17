@@ -65,13 +65,14 @@
 ### Priority 2: Social Features
 
 #### 2.1 Follow System
-- [ ] Follow/Unfollow users
-- [ ] Followers/Following lists
-- [ ] Following feed (stories from followed users)
+- [x] Follow/Unfollow users
+- [x] Followers/Following lists
+- [x] Following feed (stories from followed users)
 - [ ] Follow suggestions
 
 **Priority**: 🟡 Medium  
-**Estimated Time**: 2-3 weeks
+**Estimated Time**: 2-3 weeks  
+**Status**: ✅ **PARTIALLY COMPLETED** (2025-01-15) - Core follow functionality implemented, suggestions pending
 
 #### 2.2 Notifications
 - [ ] Notification system
