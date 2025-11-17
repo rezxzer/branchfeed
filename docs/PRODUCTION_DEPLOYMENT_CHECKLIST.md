@@ -337,6 +337,7 @@ If deployment fails or issues are discovered:
 
 ## 🔗 Related Documentation
 
+- **Post-Deployment Checklist**: `docs/POST_DEPLOYMENT_CHECKLIST.md` ⭐ **Use this after deployment is successful**
 - **Vercel Deployment Execution**: `docs/VERCEL_DEPLOYMENT_EXECUTION.md` ⭐ **Use this for actual Vercel deployment execution**
 - **Deployment Preparation Guide**: `docs/DEPLOYMENT_PREPARATION_GUIDE.md` ⭐ **Use this for step-by-step deployment preparation**
 - **Documentation Review**: `docs/DOCUMENTATION_REVIEW_CHECKLIST.md` ⭐ **Use this for documentation review**

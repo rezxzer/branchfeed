@@ -10,6 +10,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { useAdmin } from '@/hooks/useAdmin'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Button } from './ui/Button'
+import { SearchBar } from './search/SearchBar'
 import { cn } from '@/lib/utils'
 
 export function Header() {
@@ -78,6 +79,9 @@ export function Header() {
                     >
                       {t('header.feed')}
                     </Link>
+                    <div className="w-64">
+                      <SearchBar placeholder="Search stories and users..." />
+                    </div>
                     <Link
                       href="/create"
                       className={cn(
@@ -323,6 +327,18 @@ export function Header() {
                     )}
                   >
                     {t('header.feed')}
+                  </Link>
+                  <Link
+                    href="/search"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      pathname === '/search'
+                        ? 'text-brand-cyan bg-brand-iris/20'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                    )}
+                  >
+                    🔍 Search
                   </Link>
                   <Link
                     href="/create"
