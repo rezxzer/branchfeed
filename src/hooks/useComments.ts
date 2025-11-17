@@ -1,14 +1,15 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { addComment, deleteComment, getComments, type Comment } from '@/lib/comments'
+import { addComment, deleteComment, editComment, getComments, type Comment } from '@/lib/comments'
 import { useAuth } from '@/hooks/useAuth'
 
 interface UseCommentsResult {
   comments: Comment[]
   loading: boolean
   error: Error | null
-  addComment: (content: string) => Promise<void>
+  addComment: (content: string, parentCommentId?: string) => Promise<void>
+  editComment: (commentId: string, content: string) => Promise<void>
   removeComment: (commentId: string) => Promise<void>
   refreshComments: () => Promise<void>
 }
@@ -43,16 +44,41 @@ export function useComments(storyId: string): UseCommentsResult {
   }, [storyId, loadComments])
 
   const handleAddComment = useCallback(
-    async (content: string) => {
+    async (content: string, parentCommentId?: string) => {
       if (!isAuthenticated) {
         throw new Error('User not authenticated')
       }
 
       try {
         setError(null)
-        const newComment = await addComment(storyId, content)
-        // Optimistic update - add comment to list
-        setComments((prev) => [newComment, ...prev])
+        const newComment = await addComment(storyId, content, parentCommentId)
+        
+        if (parentCommentId) {
+          // Add reply to parent comment
+          setComments((prev) => {
+            const updateCommentWithReply = (comments: Comment[]): Comment[] => {
+              return comments.map(comment => {
+                if (comment.id === parentCommentId) {
+                  return {
+                    ...comment,
+                    replies: [...(comment.replies || []), newComment],
+                  }
+                }
+                if (comment.replies && comment.replies.length > 0) {
+                  return {
+                    ...comment,
+                    replies: updateCommentWithReply(comment.replies),
+                  }
+                }
+                return comment
+              })
+            }
+            return updateCommentWithReply(prev)
+          })
+        } else {
+          // Add top-level comment
+          setComments((prev) => [newComment, ...prev])
+        }
       } catch (err) {
         console.error('Error adding comment:', err)
         setError(err as Error)
@@ -60,6 +86,43 @@ export function useComments(storyId: string): UseCommentsResult {
       }
     },
     [storyId, isAuthenticated]
+  )
+
+  const handleEditComment = useCallback(
+    async (commentId: string, content: string) => {
+      if (!isAuthenticated) {
+        throw new Error('User not authenticated')
+      }
+
+      try {
+        setError(null)
+        const updatedComment = await editComment(commentId, content)
+        
+        // Update comment in tree
+        setComments((prev) => {
+          const updateComment = (comments: Comment[]): Comment[] => {
+            return comments.map(comment => {
+              if (comment.id === commentId) {
+                return updatedComment
+              }
+              if (comment.replies && comment.replies.length > 0) {
+                return {
+                  ...comment,
+                  replies: updateComment(comment.replies),
+                }
+              }
+              return comment
+            })
+          }
+          return updateComment(prev)
+        })
+      } catch (err) {
+        console.error('Error editing comment:', err)
+        setError(err as Error)
+        throw err
+      }
+    },
+    [isAuthenticated]
   )
 
   const handleDeleteComment = useCallback(
@@ -71,8 +134,24 @@ export function useComments(storyId: string): UseCommentsResult {
       try {
         setError(null)
         await deleteComment(commentId)
-        // Optimistic update - remove comment from list
-        setComments((prev) => prev.filter((c) => c.id !== commentId))
+        
+        // Remove comment from tree (including replies)
+        setComments((prev) => {
+          const removeComment = (comments: Comment[]): Comment[] => {
+            return comments
+              .filter((c) => c.id !== commentId)
+              .map(comment => {
+                if (comment.replies && comment.replies.length > 0) {
+                  return {
+                    ...comment,
+                    replies: removeComment(comment.replies),
+                  }
+                }
+                return comment
+              })
+          }
+          return removeComment(prev)
+        })
       } catch (err) {
         console.error('Error deleting comment:', err)
         setError(err as Error)
@@ -87,6 +166,7 @@ export function useComments(storyId: string): UseCommentsResult {
     loading,
     error,
     addComment: handleAddComment,
+    editComment: handleEditComment,
     removeComment: handleDeleteComment,
     refreshComments: loadComments,
   }

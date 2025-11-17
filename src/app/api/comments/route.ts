@@ -51,7 +51,11 @@ export async function POST(request: NextRequest) {
 
     // Parse request body
     const body = await request.json();
-    const { storyId, content } = body as { storyId: string; content: string };
+    const { storyId, content, parentCommentId } = body as { 
+      storyId: string; 
+      content: string;
+      parentCommentId?: string;
+    };
 
     if (!storyId || !content) {
       return NextResponse.json(
@@ -103,6 +107,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // If parentCommentId is provided, verify it exists and is on the same story
+    if (parentCommentId) {
+      const { data: parentComment, error: parentError } = await supabase
+        .from('comments')
+        .select('story_id')
+        .eq('id', parentCommentId)
+        .single();
+
+      if (parentError || !parentComment) {
+        return NextResponse.json(
+          { error: 'Parent comment not found' },
+          { status: 404 }
+        );
+      }
+
+      if (parentComment.story_id !== storyId) {
+        return NextResponse.json(
+          { error: 'Parent comment must be on the same story' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create comment
     const { data: comment, error: commentError } = await supabase
       .from('comments')
@@ -111,6 +138,7 @@ export async function POST(request: NextRequest) {
         node_id: null,
         user_id: profile.id,
         content: trimmedContent,
+        parent_comment_id: parentCommentId || null,
       })
       .select(
         `

@@ -21,7 +21,7 @@ export function CommentSection({ storyId }: CommentSectionProps) {
   const { t } = useTranslation()
   const { showToast } = useToast()
   const { isAuthenticated } = useAuth()
-  const { comments, loading, error, addComment, removeComment } = useComments(storyId)
+  const { comments, loading, error, addComment, editComment, removeComment } = useComments(storyId)
   const [commentText, setCommentText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -141,7 +141,10 @@ export function CommentSection({ storyId }: CommentSectionProps) {
             <Comment
               key={comment.id}
               comment={comment}
+              storyId={storyId}
               onDelete={removeComment}
+              onEdit={editComment}
+              onReply={(parentCommentId, content) => addComment(content, parentCommentId)}
             />
           ))}
         </div>

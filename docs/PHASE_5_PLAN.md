@@ -51,13 +51,14 @@
 **Status**: ✅ **PARTIALLY COMPLETED** (2025-01-15) - Edit/Delete implemented, draft/scheduling pending
 
 #### 1.3 Comment System Enhancements
-- [ ] Comment replies (nested comments)
-- [ ] Comment editing
-- [ ] Comment deletion
+- [x] Comment replies (nested comments)
+- [x] Comment editing
+- [x] Comment deletion
 - [ ] Comment reactions (like, etc.)
 
 **Priority**: 🟡 Medium  
-**Estimated Time**: 1 week
+**Estimated Time**: 1 week  
+**Status**: ✅ **PARTIALLY COMPLETED** (2025-01-15) - Replies/Edit/Delete implemented, reactions pending
 
 ---
 
