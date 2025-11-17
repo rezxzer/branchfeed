@@ -11,6 +11,8 @@ export interface Comment {
   created_at: string
   updated_at: string
   parent_comment_id?: string | null
+  likes_count?: number
+  liked?: boolean
   author: {
     id: string
     username: string
@@ -134,7 +136,7 @@ export async function deleteComment(commentId: string): Promise<void> {
 /**
  * Get comments for a story (with replies)
  */
-export async function getComments(storyId: string): Promise<Comment[]> {
+export async function getComments(storyId: string, userId?: string): Promise<Comment[]> {
   const supabase = createClientClient()
 
   if (!supabase) {
@@ -142,7 +144,7 @@ export async function getComments(storyId: string): Promise<Comment[]> {
     return []
   }
 
-  // Get all comments for the story
+  // Get all comments for the story with likes_count
   const { data: allComments, error } = await supabase
     .from('comments')
     .select(
@@ -182,10 +184,25 @@ export async function getComments(storyId: string): Promise<Comment[]> {
   const commentsMap = new Map<string, Comment>()
   const topLevelComments: Comment[] = []
 
+  // Get user's liked comments if authenticated
+  let userLikedComments: Set<string> = new Set()
+  if (userId) {
+    const { data: userLikes } = await supabase
+      .from('comment_likes')
+      .select('comment_id')
+      .eq('user_id', userId)
+    
+    if (userLikes) {
+      userLikedComments = new Set(userLikes.map((like: { comment_id: string }) => like.comment_id))
+    }
+  }
+
   // First pass: create map of all comments
   allComments.forEach((comment: any) => {
     commentsMap.set(comment.id, {
       ...comment,
+      likes_count: comment.likes_count || 0,
+      liked: userId ? userLikedComments.has(comment.id) : false,
       replies: [],
     } as Comment)
   })

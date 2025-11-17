@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import dynamic from 'next/dynamic'
 import { FeedControls } from './FeedControls'
 import { FeedContent } from './FeedContent'
 import { useFeed } from '@/hooks/useFeed'
@@ -8,6 +9,10 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
+
+const RecommendedStories = dynamic(() => import('../recommendations/RecommendedStories').then(mod => ({ default: mod.RecommendedStories })), {
+  ssr: false,
+})
 
 type FeedType = 'all' | 'following'
 
@@ -22,6 +27,8 @@ export function FeedPageClient() {
     loadMore,
     sortBy,
     setSortBy,
+    timeRange,
+    setTimeRange,
   } = useFeed(feedType)
 
   return (
@@ -56,7 +63,17 @@ export function FeedPageClient() {
             </Button>
           </div>
           
-          <FeedControls sortBy={sortBy} onSortChange={setSortBy} />
+          {/* Recommended Stories (only for "All" feed) */}
+          {feedType === 'all' && (
+            <RecommendedStories limit={6} />
+          )}
+
+          <FeedControls 
+            sortBy={sortBy} 
+            onSortChange={setSortBy}
+            timeRange={timeRange}
+            onTimeRangeChange={setTimeRange}
+          />
 
           <FeedContent
             stories={stories}

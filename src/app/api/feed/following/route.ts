@@ -81,6 +81,7 @@ export async function GET(request: NextRequest) {
         { count: 'exact' }
       )
       .eq('is_root', true)
+      .eq('status', 'published') // Only show published stories
       .in('author_id', followingIds)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)

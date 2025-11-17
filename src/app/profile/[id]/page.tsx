@@ -1,14 +1,70 @@
 import { redirect } from 'next/navigation'
+import type { Metadata } from 'next'
 import { getCurrentUser } from '@/lib/auth'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { ProfilePageClient } from '@/components/profile/ProfilePageClient'
+import { siteConfig } from '@/config/site'
 import type { Profile } from '@/types'
 
 interface ProfilePageProps {
   params: Promise<{
     id: string
   }>
+}
+
+export async function generateMetadata({
+  params,
+}: ProfilePageProps): Promise<Metadata> {
+  const { id } = await params
+  
+  try {
+    const profile = await getProfile(id)
+    
+    if (!profile) {
+      return {
+        title: 'Profile Not Found',
+        description: 'The profile you are looking for does not exist.',
+      }
+    }
+
+    const title = `${profile.username} | BranchFeed`
+    const description = profile.bio || `View ${profile.username}'s profile on BranchFeed.`
+    const profileUrl = `${siteConfig.url}/profile/${id}`
+    
+    const ogImage = profile.avatar_url || siteConfig.ogImage
+
+    return {
+      title,
+      description,
+      openGraph: {
+        type: 'profile',
+        title,
+        description,
+        url: profileUrl,
+        siteName: siteConfig.name,
+        images: [
+          {
+            url: ogImage,
+            width: 1200,
+            height: 630,
+            alt: `${profile.username}'s profile`,
+          },
+        ],
+      },
+      twitter: {
+        card: 'summary',
+        title,
+        description,
+        images: [ogImage],
+      },
+    }
+  } catch (error) {
+    return {
+      title: 'Profile | BranchFeed',
+      description: 'View user profile on BranchFeed.',
+    }
+  }
 }
 
 async function getProfile(userId: string): Promise<Profile | null> {
@@ -222,6 +278,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   const { followersCount, followingCount } = await getFollowCounts(id)
 
   const isOwnProfile = currentUser.id === id
+
+  // Revalidate profile pages every 60 seconds (for public profiles)
+  // Note: This is a page-level revalidation, not route segment config
+  // For route segment config, we'd need to export revalidate constant
 
   return (
     <ProfilePageClient

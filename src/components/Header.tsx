@@ -11,6 +11,7 @@ import { useAdmin } from '@/hooks/useAdmin'
 import { LanguageSwitcher } from './LanguageSwitcher'
 import { Button } from './ui/Button'
 import { SearchBar } from './search/SearchBar'
+import { NotificationBell } from './notifications/NotificationBell'
 import { cn } from '@/lib/utils'
 
 export function Header() {
@@ -175,19 +176,26 @@ export function Header() {
                 )}
 
                 {isAuthenticated && (
-                  <div className="relative">
-                    <button
-                      onClick={() => setUserMenuOpen(!userMenuOpen)}
-                      className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors ease-smooth"
-                      aria-label={`User menu for ${profile?.username || user?.email?.split('@')[0] || 'User'}`}
-                      aria-expanded={userMenuOpen}
-                      aria-haspopup="true"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape' && userMenuOpen) {
-                          setUserMenuOpen(false)
-                        }
-                      }}
-                    >
+                  <>
+                    {/* Notification Bell */}
+                    <div className="hidden md:block">
+                      <NotificationBell />
+                    </div>
+
+                    {/* User Menu */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setUserMenuOpen(!userMenuOpen)}
+                        className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-800 transition-colors ease-smooth"
+                        aria-label={`User menu for ${profile?.username || user?.email?.split('@')[0] || 'User'}`}
+                        aria-expanded={userMenuOpen}
+                        aria-haspopup="true"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Escape' && userMenuOpen) {
+                            setUserMenuOpen(false)
+                          }
+                        }}
+                      >
                       {profile?.avatar_url ? (
                         <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-700 flex-shrink-0">
                           <Image
@@ -262,6 +270,7 @@ export function Header() {
                       </div>
                     )}
                   </div>
+                    </>
                 )}
 
                 {/* Mobile Menu Button */}
@@ -339,6 +348,42 @@ export function Header() {
                     )}
                   >
                     🔍 Search
+                  </Link>
+                  <Link
+                    href="/notifications"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      pathname === '/notifications'
+                        ? 'text-brand-cyan bg-brand-iris/20'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                    )}
+                  >
+                    🔔 Notifications
+                  </Link>
+                  <Link
+                    href="/bookmarks"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      pathname === '/bookmarks'
+                        ? 'text-brand-cyan bg-brand-iris/20'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                    )}
+                  >
+                    📑 Bookmarks
+                  </Link>
+                  <Link
+                    href="/drafts"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      pathname === '/drafts'
+                        ? 'text-brand-cyan bg-brand-iris/20'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                    )}
+                  >
+                    📝 Drafts
                   </Link>
                   <Link
                     href="/create"

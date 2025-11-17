@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { useAuth } from '@/hooks/useAuth'
+import { useCommentLikes } from '@/hooks/useCommentLikes'
 import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
@@ -40,6 +41,22 @@ export function Comment({
   
   const isOwnComment = user?.id === comment.user_id
   const isEdited = comment.updated_at !== comment.created_at
+
+  // Comment likes hook
+  const { liked, likesCount, loading: likeLoading, toggleLike } = useCommentLikes(
+    comment.id,
+    comment.liked || false,
+    comment.likes_count || 0
+  )
+
+  const handleLike = async () => {
+    try {
+      await toggleLike(comment.id)
+    } catch (err) {
+      console.error('Error toggling like:', err)
+      showToast('Failed to like comment. Please try again.', 'error')
+    }
+  }
 
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this comment?')) {
@@ -225,15 +242,27 @@ export function Comment({
         {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {isAuthenticated && !isEditing && !isReplying && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsReplying(!isReplying)}
-              className="text-gray-300 hover:text-brand-cyan"
-              aria-label="Reply to comment"
-            >
-              💬 Reply
-            </Button>
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLike}
+                disabled={likeLoading}
+                className={`text-gray-300 hover:text-brand-cyan ${liked ? 'text-brand-cyan' : ''}`}
+                aria-label={liked ? 'Unlike comment' : 'Like comment'}
+              >
+                {liked ? '❤️' : '🤍'} {likesCount > 0 && likesCount}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsReplying(!isReplying)}
+                className="text-gray-300 hover:text-brand-cyan"
+                aria-label="Reply to comment"
+              >
+                💬 Reply
+              </Button>
+            </>
           )}
           {isOwnComment && !isEditing && !isReplying && (
             <>

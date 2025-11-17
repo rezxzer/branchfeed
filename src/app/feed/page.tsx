@@ -1,14 +1,36 @@
-import { redirect } from 'next/navigation'
-import { getCurrentUser } from '@/lib/auth'
+import type { Metadata } from 'next'
 import { FeedPageClient } from '@/components/feed/FeedPageClient'
+import { siteConfig } from '@/config/site'
 
-export default async function FeedPage() {
-  const user = await getCurrentUser()
+// Revalidate feed page every 30 seconds
+export const revalidate = 30
 
-  if (!user) {
-    redirect('/signin')
-  }
-
-  return <FeedPageClient />
+export const metadata: Metadata = {
+  title: 'Feed',
+  description: 'Discover and explore interactive branching stories on BranchFeed.',
+  openGraph: {
+    type: 'website',
+    title: 'Feed | BranchFeed',
+    description: 'Discover and explore interactive branching stories on BranchFeed.',
+    url: `${siteConfig.url}/feed`,
+    siteName: siteConfig.name,
+    images: [
+      {
+        url: siteConfig.ogImage,
+        width: 1200,
+        height: 630,
+        alt: 'BranchFeed Feed',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Feed | BranchFeed',
+    description: 'Discover and explore interactive branching stories on BranchFeed.',
+    images: [siteConfig.ogImage],
+  },
 }
 
+export default function FeedPage() {
+  return <FeedPageClient />
+}

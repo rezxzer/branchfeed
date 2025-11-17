@@ -13,6 +13,8 @@ interface StoryPreviewProps {
   onBack: () => void
   loading: boolean
   error: Error | null
+  publishAsDraft?: boolean
+  onPublishAsDraftChange?: (value: boolean) => void
 }
 
 export function StoryPreview({
@@ -22,6 +24,8 @@ export function StoryPreview({
   onBack,
   loading,
   error,
+  publishAsDraft = false,
+  onPublishAsDraftChange,
 }: StoryPreviewProps) {
   const { t } = useTranslation()
 
@@ -95,6 +99,23 @@ export function StoryPreview({
         </div>
       </div>
 
+      {/* Draft/Published Toggle */}
+      {onPublishAsDraftChange && (
+        <div className="mb-6 flex items-center gap-3 p-4 bg-gray-900/50 rounded-lg border border-gray-700/50">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={publishAsDraft}
+              onChange={(e) => onPublishAsDraftChange(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-brand-cyan focus:ring-brand-cyan focus:ring-2"
+            />
+            <span className="text-sm text-gray-300">
+              Save as draft (not published)
+            </span>
+          </label>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex gap-4">
         <Button type="button" variant="outline" onClick={onBack} fullWidth>
@@ -107,12 +128,16 @@ export function StoryPreview({
           fullWidth
           disabled={loading}
           isLoading={loading}
-          aria-label={loading ? 'Publishing story...' : 'Publish story'}
+          aria-label={loading ? (publishAsDraft ? 'Saving draft...' : 'Publishing story...') : (publishAsDraft ? 'Save draft' : 'Publish story')}
         >
           {loading ? (
-            t('createStory.preview.publishing') || 'Publishing...'
+            publishAsDraft 
+              ? (t('createStory.preview.savingDraft') || 'Saving draft...')
+              : (t('createStory.preview.publishing') || 'Publishing...')
           ) : (
-            t('createStory.publish') || 'Publish Story'
+            publishAsDraft 
+              ? (t('createStory.saveDraft') || 'Save Draft')
+              : (t('createStory.publish') || 'Publish Story')
           )}
         </Button>
       </div>

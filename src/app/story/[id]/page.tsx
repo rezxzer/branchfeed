@@ -5,6 +5,9 @@ import { getStoryById } from '@/lib/stories.server'
 import { StoryDetailPageClient } from '@/components/story/StoryDetailPageClient'
 import { siteConfig } from '@/config/site'
 
+// Revalidate story pages every 60 seconds (for public stories)
+export const revalidate = 60
+
 interface StoryDetailPageProps {
   params: Promise<{
     id: string

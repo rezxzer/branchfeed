@@ -27,5 +27,6 @@ export interface BranchNodeData {
 export interface CreateStoryData {
   root: RootStoryData
   nodes: BranchNodeData[]
+  status?: 'draft' | 'published' // Story status: draft or published (default: published)
 }
 

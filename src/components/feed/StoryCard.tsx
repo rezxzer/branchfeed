@@ -3,9 +3,12 @@
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useAuth } from '@/hooks/useAuth'
+import { useBookmarks } from '@/hooks/useBookmarks'
 import { Card } from '@/components/ui/Card'
 import { MediaDisplay } from '@/components/MediaDisplay'
 import { ShareStoryButton } from '@/components/story/ShareStoryButton'
+import { Button } from '@/components/ui/Button'
 import type { Story } from '@/types'
 import Link from 'next/link'
 
@@ -16,9 +19,23 @@ interface StoryCardProps {
 export function StoryCard({ story }: StoryCardProps) {
   const router = useRouter()
   const { t } = useTranslation()
+  const { isAuthenticated } = useAuth()
+  const { isBookmarked, loading: bookmarkLoading, toggleBookmark } = useBookmarks(
+    story.id,
+    story.isBookmarked || false
+  )
 
   const handleClick = () => {
     router.push(`/story/${story.id}`)
+  }
+
+  const handleBookmark = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      await toggleBookmark(story.id)
+    } catch (err) {
+      console.error('Error toggling bookmark:', err)
+    }
   }
 
   // Verify navigation works correctly
@@ -62,6 +79,26 @@ export function StoryCard({ story }: StoryCardProps) {
         {story.is_root && (
           <div className="absolute top-2 left-2 px-2 py-1 bg-brand-iris/80 backdrop-blur-sm rounded-lg text-xs font-semibold text-white z-10">
             {t('feed.storyType.branching')}
+          </div>
+        )}
+        
+        {/* Bookmark Button */}
+        {isAuthenticated && (
+          <div className="absolute top-2 right-2 z-10" onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBookmark}
+              disabled={bookmarkLoading}
+              className={`p-2 rounded-full backdrop-blur-sm transition-colors ${
+                isBookmarked 
+                  ? 'bg-brand-cyan/80 text-white' 
+                  : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700/80'
+              }`}
+              aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark story'}
+            >
+              {isBookmarked ? '🔖' : '📑'}
+            </Button>
           </div>
         )}
       </div>

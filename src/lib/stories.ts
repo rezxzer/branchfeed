@@ -137,6 +137,7 @@ export async function createStory(data: CreateStoryData): Promise<string> {
         is_root: true,
         max_depth: 5, // Default max depth
         branches_count: data.nodes.length,
+        status: data.status || 'published', // Default to published if not specified
       })
       .select('id')
       .single()
@@ -298,6 +299,14 @@ export async function getRootStoriesClient(
 ): Promise<Story[]> {
   const supabase = createClientClient()
 
+  if (!supabase) {
+    console.error('Supabase client is null. Check environment variables.')
+    return []
+  }
+
+  // Get current user for bookmark status
+  const { data: { user } } = await supabase.auth.getUser()
+
   // Determine sort order based on sortBy
   let orderBy = 'created_at'
   let ascending = false
@@ -340,7 +349,20 @@ export async function getRootStoriesClient(
     return []
   }
 
-  // Count branches for each story
+  // Get user's bookmarked stories if authenticated
+  let userBookmarkedStories: Set<string> = new Set()
+  if (user) {
+    const { data: userBookmarks } = await supabase
+      .from('bookmarks')
+      .select('story_id')
+      .eq('user_id', user.id)
+    
+    if (userBookmarks) {
+      userBookmarkedStories = new Set(userBookmarks.map((bookmark: { story_id: string }) => bookmark.story_id))
+    }
+  }
+
+  // Count branches for each story and add bookmark status
   const storiesWithBranches = await Promise.all(
     (data || []).map(async (story: any) => {
       try {
@@ -354,12 +376,14 @@ export async function getRootStoriesClient(
           return {
             ...story,
             branches_count: 0,
+            isBookmarked: user ? userBookmarkedStories.has(story.id) : false,
           } as Story
         }
 
         return {
           ...story,
           branches_count: count || 0,
+          isBookmarked: user ? userBookmarkedStories.has(story.id) : false,
         } as Story
       } catch (err) {
         // If there's any error counting branches, default to 0
@@ -367,6 +391,7 @@ export async function getRootStoriesClient(
         return {
           ...story,
           branches_count: 0,
+          isBookmarked: user ? userBookmarkedStories.has(story.id) : false,
         } as Story
       }
     })

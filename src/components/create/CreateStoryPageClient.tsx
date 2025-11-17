@@ -21,6 +21,7 @@ export function CreateStoryPageClient() {
   const [step, setStep] = useState<Step>('root')
   const [rootStory, setRootStory] = useState<RootStoryData | null>(null)
   const [branchNodes, setBranchNodes] = useState<BranchNodeData[]>([])
+  const [publishAsDraft, setPublishAsDraft] = useState(false)
 
   const { createStory, loading, error, uploadProgress } = useCreateStory()
 
@@ -49,6 +50,7 @@ export function CreateStoryPageClient() {
       const storyId = await createStory({
         root: rootStory,
         nodes: branchNodes,
+        status: publishAsDraft ? 'draft' : 'published',
       })
 
       // Show success toast
@@ -152,6 +154,8 @@ export function CreateStoryPageClient() {
             onBack={handleBack}
             loading={loading}
             error={error}
+            publishAsDraft={publishAsDraft}
+            onPublishAsDraftChange={setPublishAsDraft}
           />
         )}
 

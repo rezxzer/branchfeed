@@ -24,9 +24,11 @@ export interface Story {
   likes_count: number // total number of likes for this story
   comments_count?: number
   branches_count?: number // count of branch nodes (for feed display) - deprecated, use paths_count
+  status?: 'draft' | 'published' // story status: draft or published
   created_at: string
   updated_at?: string
   userHasLiked?: boolean // whether the current user has liked this story (server-side only)
+  isBookmarked?: boolean // whether the current user has bookmarked this story
   // Author profile (joined from profiles table)
   author?: {
     id: string

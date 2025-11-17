@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { addComment, deleteComment, editComment, getComments, type Comment } from '@/lib/comments'
 import { useAuth } from '@/hooks/useAuth'
+import { createClientClient } from '@/lib/supabase/client'
 
 interface UseCommentsResult {
   comments: Comment[]
@@ -27,7 +28,17 @@ export function useComments(storyId: string): UseCommentsResult {
     try {
       setLoading(true)
       setError(null)
-      const commentsData = await getComments(storyId)
+      
+      let userId: string | undefined
+      if (isAuthenticated) {
+        const supabase = createClientClient()
+        if (supabase) {
+          const { data: { user } } = await supabase.auth.getUser()
+          userId = user?.id
+        }
+      }
+      
+      const commentsData = await getComments(storyId, userId)
       setComments(commentsData)
     } catch (err) {
       console.error('Error loading comments:', err)
@@ -35,7 +46,7 @@ export function useComments(storyId: string): UseCommentsResult {
     } finally {
       setLoading(false)
     }
-  }, [storyId])
+  }, [storyId, isAuthenticated])
 
   useEffect(() => {
     if (storyId) {

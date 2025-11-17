@@ -73,9 +73,10 @@ export async function PATCH(
 
     // Parse request body
     const body = await request.json()
-    const { title, description } = body as {
+    const { title, description, status } = body as {
       title?: string
       description?: string
+      status?: 'draft' | 'published'
     }
 
     // Validate
@@ -90,6 +91,7 @@ export async function PATCH(
     const updateData: {
       title?: string
       description?: string | null
+      status?: 'draft' | 'published'
       updated_at?: string
     } = {
       updated_at: new Date().toISOString(),
@@ -101,6 +103,16 @@ export async function PATCH(
 
     if (description !== undefined) {
       updateData.description = description?.trim() || null
+    }
+
+    if (status !== undefined) {
+      if (status !== 'draft' && status !== 'published') {
+        return NextResponse.json(
+          { error: 'Invalid status. Must be "draft" or "published"' },
+          { status: 400 }
+        )
+      }
+      updateData.status = status
     }
 
     // Update story

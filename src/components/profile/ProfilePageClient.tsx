@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import dynamic from 'next/dynamic'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
@@ -9,6 +10,10 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge'
 import { FollowButton } from './FollowButton'
 import type { Profile, Story } from '@/types'
+
+const FollowSuggestions = dynamic(() => import('../follow/FollowSuggestions').then(mod => ({ default: mod.FollowSuggestions })), {
+  ssr: false,
+})
 
 interface ProfilePageClientProps {
   profile: Profile
@@ -186,6 +191,13 @@ export function ProfilePageClient({
             </div>
           )}
         </div>
+
+        {/* Follow Suggestions (only for own profile) */}
+        {isOwnProfile && (
+          <div className="mt-6">
+            <FollowSuggestions limit={5} />
+          </div>
+        )}
       </div>
     </div>
   )

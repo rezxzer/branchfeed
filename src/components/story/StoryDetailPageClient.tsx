@@ -40,6 +40,11 @@ const PathViewer = dynamic(() => import('./PathViewer').then(mod => ({ default: 
   ssr: false,
 });
 
+const RecommendedStories = dynamic(() => import('../recommendations/RecommendedStories').then(mod => ({ default: mod.RecommendedStories })), {
+  loading: () => <div className="mt-8"><Spinner size="md" /></div>,
+  ssr: false,
+});
+
 const ShareStoryButton = dynamic(() => import('./ShareStoryButton').then(mod => ({ default: mod.ShareStoryButton })), {
   ssr: false,
 });
@@ -417,6 +422,14 @@ export function StoryDetailPageClient({
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => router.push(`/story/${story.id}/analytics`)}
+                        className="text-xs"
+                      >
+                        📊 Analytics
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => setIsEditModalOpen(true)}
                         className="text-xs"
                       >
@@ -546,6 +559,13 @@ export function StoryDetailPageClient({
         {story && (
           <div className="mt-8">
             <PathViewer storyId={story.id} />
+          </div>
+        )}
+
+        {/* Recommended Stories */}
+        {story && (
+          <div className="mt-8">
+            <RecommendedStories excludeStoryId={story.id} limit={6} />
           </div>
         )}
 
