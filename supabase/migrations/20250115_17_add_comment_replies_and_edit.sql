@@ -31,35 +31,31 @@ END $$;
 
 -- Add trigger function to validate parent comment is on the same story
 -- (PostgreSQL doesn't allow subqueries in CHECK constraints)
-DO $$
+-- CREATE OR REPLACE is idempotent, so we can use it directly
+CREATE OR REPLACE FUNCTION validate_comment_parent_story()
+RETURNS TRIGGER AS $$
 BEGIN
-  -- Create trigger function if it doesn't exist
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_proc WHERE proname = 'validate_comment_parent_story'
-  ) THEN
-    CREATE OR REPLACE FUNCTION validate_comment_parent_story()
-    RETURNS TRIGGER AS $$
-    BEGIN
-      -- If parent_comment_id is NULL, allow (top-level comment)
-      IF NEW.parent_comment_id IS NULL THEN
-        RETURN NEW;
-      END IF;
-
-      -- Check if parent comment exists and is on the same story
-      IF NOT EXISTS (
-        SELECT 1 FROM comments
-        WHERE id = NEW.parent_comment_id
-        AND story_id = NEW.story_id
-      ) THEN
-        RAISE EXCEPTION 'Parent comment must be on the same story';
-      END IF;
-
-      RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
+  -- If parent_comment_id is NULL, allow (top-level comment)
+  IF NEW.parent_comment_id IS NULL THEN
+    RETURN NEW;
   END IF;
 
-  -- Create trigger if it doesn't exist
+  -- Check if parent comment exists and is on the same story
+  IF NOT EXISTS (
+    SELECT 1 FROM comments
+    WHERE id = NEW.parent_comment_id
+    AND story_id = NEW.story_id
+  ) THEN
+    RAISE EXCEPTION 'Parent comment must be on the same story';
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger if it doesn't exist
+DO $$
+BEGIN
   IF NOT EXISTS (
     SELECT 1 FROM pg_trigger WHERE tgname = 'validate_comment_parent_story_trigger'
   ) THEN
