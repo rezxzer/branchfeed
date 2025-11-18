@@ -133,7 +133,7 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
           <input
             id="story-media"
             type="file"
-            accept="image/*,video/*"
+            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-msvideo,.mp4,.webm,.mov,.avi"
             onChange={handleFileChange}
             className="hidden"
           />

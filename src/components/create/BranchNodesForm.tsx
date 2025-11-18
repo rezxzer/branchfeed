@@ -217,7 +217,7 @@ export function BranchNodesForm({
                   <div className="mb-3">
                     <input
                       type="file"
-                      accept="image/*,video/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-msvideo,.mp4,.webm,.mov,.avi"
                       onChange={(e) => handleFileChange(node.id, 'choiceA', e)}
                       className="hidden"
                       id={`media-a-${node.id}`}
@@ -291,7 +291,7 @@ export function BranchNodesForm({
                   <div className="mb-3">
                     <input
                       type="file"
-                      accept="image/*,video/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-msvideo,.mp4,.webm,.mov,.avi"
                       onChange={(e) => handleFileChange(node.id, 'choiceB', e)}
                       className="hidden"
                       id={`media-b-${node.id}`}
