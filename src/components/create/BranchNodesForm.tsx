@@ -70,21 +70,32 @@ export function BranchNodesForm({
     if (!file) return
 
     // Basic validation
-    const maxSize = 10 * 1024 * 1024 // 10MB
+    // Increased max size for videos (50MB for videos, 10MB for images)
+    const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024 // 50MB for videos, 10MB for images
+    
     if (file.size > maxSize) {
       showToast(
-        `File size must be less than 10MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        `File size must be less than ${isVideo ? '50' : '10'}MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
         'error',
         5000
       )
       return
     }
 
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm']
-    if (!validTypes.includes(file.type)) {
+    // Validate file type - check both MIME type and file extension
+    const validMimeTypes = [
+      'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+      'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'
+    ]
+    const validExtensions = /\.(jpg|jpeg|png|webp|gif|mp4|webm|mov|avi|mkv)$/i
+    
+    const isValidMimeType = file.type && validMimeTypes.includes(file.type.toLowerCase())
+    const isValidExtension = validExtensions.test(file.name)
+    
+    if (!isValidMimeType && !isValidExtension) {
       showToast(
-        'Please upload an image (JPEG, PNG, WebP) or video (MP4, WebM) file.',
+        'Please upload an image (JPEG, PNG, WebP, GIF) or video (MP4, WebM, MOV, AVI) file.',
         'error',
         5000
       )

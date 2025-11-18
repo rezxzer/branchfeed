@@ -39,22 +39,34 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
     const file = e.target.files?.[0]
     if (file) {
       // Basic validation
-      const maxSize = 10 * 1024 * 1024 // 10MB
+      // Increased max size for videos (50MB for videos, 10MB for images)
+      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
+      const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024 // 50MB for videos, 10MB for images
+      
       if (file.size > maxSize) {
         setErrors({ 
-          media: t('createStory.errors.fileTooLarge') || `File size must be less than 10MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB` 
+          media: t('createStory.errors.fileTooLarge') || `File size must be less than ${isVideo ? '50' : '10'}MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB` 
         })
         return
       }
       
-      // Validate file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm']
-      if (!validTypes.includes(file.type)) {
+      // Validate file type - check both MIME type and file extension
+      const validMimeTypes = [
+        'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
+        'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska'
+      ]
+      const validExtensions = /\.(jpg|jpeg|png|webp|gif|mp4|webm|mov|avi|mkv)$/i
+      
+      const isValidMimeType = file.type && validMimeTypes.includes(file.type.toLowerCase())
+      const isValidExtension = validExtensions.test(file.name)
+      
+      if (!isValidMimeType && !isValidExtension) {
         setErrors({ 
-          media: t('createStory.errors.invalidFileType') || 'Please upload an image (JPEG, PNG, WebP) or video (MP4, WebM) file.' 
+          media: t('createStory.errors.invalidFileType') || 'Please upload an image (JPEG, PNG, WebP, GIF) or video (MP4, WebM, MOV, AVI) file.' 
         })
         return
       }
+      
       setMedia(file)
       setErrors({ ...errors, media: '' })
     }
@@ -165,7 +177,7 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
             )}
           </div>
           <p className="mt-2 text-xs text-gray-400">
-            Supported formats: Images (JPEG, PNG, WebP) or Videos (MP4, WebM). Max size: 10MB
+            Supported formats: Images (JPEG, PNG, WebP, GIF) or Videos (MP4, WebM, MOV, AVI). Max size: 10MB (images) / 50MB (videos)
           </p>
           {errors.media && (
             <p className="mt-2 text-sm text-error">{errors.media}</p>
