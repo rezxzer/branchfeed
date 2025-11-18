@@ -8,6 +8,7 @@ import { useBookmarks } from '@/hooks/useBookmarks'
 import { Card } from '@/components/ui/Card'
 import { MediaDisplay } from '@/components/MediaDisplay'
 import { ShareStoryButton } from '@/components/story/ShareStoryButton'
+import { StoryTags } from '@/components/story/StoryTags'
 import { Button } from '@/components/ui/Button'
 import type { Story } from '@/types'
 import Link from 'next/link'
@@ -115,6 +116,11 @@ export function StoryCard({ story }: StoryCardProps) {
           <p className="text-sm text-gray-300 line-clamp-2">
             {story.description}
           </p>
+        )}
+
+        {/* Tags */}
+        {story.tags && story.tags.length > 0 && (
+          <StoryTags tags={story.tags} maxTags={3} />
         )}
 
         {/* Footer: Author & Stats */}

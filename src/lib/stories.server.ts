@@ -40,6 +40,17 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
         id,
         username,
         avatar_url
+      ),
+      story_tags(
+        tag:tags(
+          id,
+          name,
+          slug,
+          description,
+          color,
+          created_at,
+          updated_at
+        )
       )
     `
     )
@@ -96,12 +107,16 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
     .select('*', { count: 'exact', head: true })
     .eq('story_id', storyId)
 
+  // Extract tags from nested structure
+  const tags = (data.story_tags as any[])?.map((st: any) => st.tag).filter(Boolean) || []
+
   return {
     ...data,
     userHasLiked,
     userHasShared,
     isBookmarked,
     branches_count: branchesCount || 0,
+    tags,
   } as Story
 }
 
@@ -152,6 +167,17 @@ export async function getTrendingStories(
         id,
         username,
         avatar_url
+      ),
+      story_tags(
+        tag:tags(
+          id,
+          name,
+          slug,
+          description,
+          color,
+          created_at,
+          updated_at
+        )
       )
     `
     )
@@ -226,6 +252,9 @@ export async function getTrendingStories(
         .select('*', { count: 'exact', head: true })
         .eq('story_id', story.id)
 
+      // Extract tags from nested structure
+      const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+
       return {
         ...story,
         branches_count: branchesCount || 0,
@@ -233,6 +262,7 @@ export async function getTrendingStories(
         trendingScore: undefined,
         isBookmarked: story.isBookmarked || false,
         userHasShared: user ? userSharedStories.has(story.id) : false,
+        tags,
       } as Story
     })
   )
@@ -286,6 +316,17 @@ export async function getFollowingStories(
         id,
         username,
         avatar_url
+      ),
+      story_tags(
+        tag:tags(
+          id,
+          name,
+          slug,
+          description,
+          color,
+          created_at,
+          updated_at
+        )
       )
     `
     )
@@ -335,11 +376,15 @@ export async function getFollowingStories(
         userHasShared = !!shareData
       }
 
+      // Extract tags from nested structure
+      const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+
       return {
         ...story,
         branches_count: branchesCount || 0,
         isBookmarked,
         userHasShared,
+        tags,
       } as Story
     })
   )

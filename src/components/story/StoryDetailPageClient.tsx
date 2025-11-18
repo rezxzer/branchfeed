@@ -16,6 +16,7 @@ import { useStory } from '@/hooks/useStory'
 import { usePathTracking } from '@/hooks/usePathTracking'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { StoryStatsBar } from './StoryStatsBar'
+import { StoryTags } from './StoryTags'
 import { encodePath, decodePath } from '@/lib/pathSharing'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -458,6 +459,13 @@ export function StoryDetailPageClient({
           </div>
           {story.description && (
             <p className="text-sm sm:text-base text-gray-300 mt-2 break-words">{story.description}</p>
+          )}
+          
+          {/* Tags */}
+          {story.tags && story.tags.length > 0 && (
+            <div className="mt-3">
+              <StoryTags tags={story.tags} />
+            </div>
           )}
         </div>
 
