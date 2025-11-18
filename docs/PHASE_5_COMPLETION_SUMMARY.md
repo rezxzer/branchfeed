@@ -18,7 +18,7 @@
 
 #### Priority 2: Social Features
 - ✅ **Follow System** - Follow/Unfollow, Lists, Following Feed, Suggestions
-- ✅ **Notifications System** - All notification types, Bell icon, User preferences
+- ✅ **Notifications System** - All notification types, Bell icon, User preferences, Email notifications
 
 #### Priority 3: Discovery & Engagement
 - ✅ **Trending Stories** - Algorithm with shares tracking and feed integration

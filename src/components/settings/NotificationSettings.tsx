@@ -20,6 +20,11 @@ interface NotificationPreferences {
   comment: boolean
   reply: boolean
   story_new: boolean
+  email_follow?: boolean
+  email_like?: boolean
+  email_comment?: boolean
+  email_reply?: boolean
+  email_story_new?: boolean
 }
 
 const defaultPreferences: NotificationPreferences = {
@@ -28,6 +33,11 @@ const defaultPreferences: NotificationPreferences = {
   comment: true,
   reply: true,
   story_new: true,
+  email_follow: true,
+  email_like: true,
+  email_comment: true,
+  email_reply: true,
+  email_story_new: true,
 }
 
 export function NotificationSettings({
@@ -92,44 +102,88 @@ export function NotificationSettings({
           Choose which types of notifications you want to receive.
         </p>
 
-        <div className="space-y-4">
-          {(Object.keys(notificationLabels) as NotificationType[]).map((type) => (
-            <div
-              key={type}
-              className="flex items-center justify-between p-4 bg-gray-900/50 rounded-lg border border-gray-700/50"
-            >
-              <div className="flex-1">
-                <h3 className="text-white font-medium mb-1">
-                  {notificationLabels[type]}
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  {type === 'follow' && 'Get notified when someone follows you'}
-                  {type === 'like' && 'Get notified when someone likes your story'}
-                  {type === 'comment' && 'Get notified when someone comments on your story'}
-                  {type === 'reply' && 'Get notified when someone replies to your comment'}
-                  {type === 'story_new' && 'Get notified when a user you follow publishes a new story'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleToggle(type)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ease-smooth ${
-                  preferences[type]
-                    ? 'bg-brand-cyan'
-                    : 'bg-gray-600'
-                }`}
-                role="switch"
-                aria-checked={preferences[type]}
-                aria-label={`Toggle ${notificationLabels[type]}`}
+        <div className="space-y-6">
+          {(Object.keys(notificationLabels) as NotificationType[]).map((type) => {
+            const emailKey = `email_${type}` as keyof NotificationPreferences
+            const emailEnabled = preferences[emailKey] !== false // Default to true
+            
+            return (
+              <div
+                key={type}
+                className="p-4 bg-gray-900/50 rounded-lg border border-gray-700/50 space-y-3"
               >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ease-smooth ${
-                    preferences[type] ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-            </div>
-          ))}
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-white font-medium mb-1">
+                      {notificationLabels[type]}
+                    </h3>
+                    <p className="text-gray-400 text-sm">
+                      {type === 'follow' && 'Get notified when someone follows you'}
+                      {type === 'like' && 'Get notified when someone likes your story'}
+                      {type === 'comment' && 'Get notified when someone comments on your story'}
+                      {type === 'reply' && 'Get notified when someone replies to your comment'}
+                      {type === 'story_new' && 'Get notified when a user you follow publishes a new story'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleToggle(type)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ease-smooth ${
+                      preferences[type]
+                        ? 'bg-brand-cyan'
+                        : 'bg-gray-600'
+                    }`}
+                    role="switch"
+                    aria-checked={preferences[type]}
+                    aria-label={`Toggle ${notificationLabels[type]}`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ease-smooth ${
+                        preferences[type] ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+                
+                {/* Email notification toggle */}
+                {preferences[type] && (
+                  <div className="flex items-center justify-between pl-4 border-l-2 border-gray-700/50">
+                    <div className="flex-1">
+                      <h4 className="text-gray-300 font-medium text-sm mb-0.5">
+                        Email notifications
+                      </h4>
+                      <p className="text-gray-500 text-xs">
+                        Receive email notifications for {notificationLabels[type].toLowerCase()}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreferences((prev) => ({
+                          ...prev,
+                          [emailKey]: !emailEnabled,
+                        }))
+                      }}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ease-smooth ${
+                        emailEnabled
+                          ? 'bg-brand-cyan'
+                          : 'bg-gray-600'
+                      }`}
+                      role="switch"
+                      aria-checked={emailEnabled}
+                      aria-label={`Toggle email notifications for ${notificationLabels[type]}`}
+                    >
+                      <span
+                        className={`inline-block h-3 w-3 transform rounded-full bg-white transition-transform ease-smooth ${
+                          emailEnabled ? 'translate-x-5' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         <div className="mt-6">

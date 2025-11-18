@@ -86,10 +86,13 @@
   - [x] New story from followed user
 - [x] Notification settings (user preferences)
 - [x] Notification bell icon
+- [x] Email notifications (Resend integration)
+- [x] Email notification preferences
+- [x] Email templates for all notification types
 
 **Priority**: 🟡 Medium  
 **Estimated Time**: 2-3 weeks  
-**Status**: ✅ **COMPLETED** (2025-01-15) - Full notification system with user preferences implemented
+**Status**: ✅ **COMPLETED** (2025-01-15) - Full notification system with email notifications and user preferences implemented
 
 ---
 
