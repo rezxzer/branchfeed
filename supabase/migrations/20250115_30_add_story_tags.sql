@@ -6,24 +6,20 @@
 CREATE TABLE IF NOT EXISTS tags (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
-  slug TEXT NOT NULL UNIQUE, -- URL-friendly version of name
+  slug TEXT NOT NULL UNIQUE,
   description TEXT,
-  color TEXT, -- Optional color for tag display (hex code)
+  color TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-COMMENT ON TABLE tags IS 
-  'Tags for categorizing stories. Tags can be used for filtering and discovery.';
+COMMENT ON TABLE tags IS 'Tags for categorizing stories. Tags can be used for filtering and discovery.';
 
-COMMENT ON COLUMN tags.name IS 
-  'Tag name (e.g., "Adventure", "Romance", "Mystery").';
+COMMENT ON COLUMN tags.name IS 'Tag name (e.g., Adventure, Romance, Mystery).';
 
-COMMENT ON COLUMN tags.slug IS 
-  'URL-friendly version of tag name (e.g., "adventure", "romance", "mystery").';
+COMMENT ON COLUMN tags.slug IS 'URL-friendly version of tag name (e.g., adventure, romance, mystery).';
 
-COMMENT ON COLUMN tags.color IS 
-  'Optional hex color code for tag display (e.g., "#667eea").';
+COMMENT ON COLUMN tags.color IS 'Optional hex color code for tag display (e.g., #667eea).';
 
 -- Create story_tags junction table
 CREATE TABLE IF NOT EXISTS story_tags (
@@ -33,11 +29,10 @@ CREATE TABLE IF NOT EXISTS story_tags (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   CONSTRAINT fk_story_tags_story FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE,
   CONSTRAINT fk_story_tags_tag FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
-  CONSTRAINT uq_story_tags_story_tag UNIQUE (story_id, tag_id) -- One tag per story (no duplicates)
+  CONSTRAINT uq_story_tags_story_tag UNIQUE (story_id, tag_id)
 );
 
-COMMENT ON TABLE story_tags IS 
-  'Junction table linking stories to tags. Many-to-many relationship.';
+COMMENT ON TABLE story_tags IS 'Junction table linking stories to tags. Many-to-many relationship.';
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_tags_name ON tags(name);
@@ -205,7 +200,7 @@ CREATE TRIGGER trigger_auto_generate_tag_slug
   FOR EACH ROW
   EXECUTE FUNCTION auto_generate_tag_slug();
 
--- Insert some default tags (optional, can be removed if not needed)
+-- Insert some default tags
 INSERT INTO tags (name, description, color) VALUES
   ('Adventure', 'Stories with exciting journeys and quests', '#667eea'),
   ('Romance', 'Love stories and romantic narratives', '#f093fb'),
@@ -216,9 +211,3 @@ INSERT INTO tags (name, description, color) VALUES
   ('Comedy', 'Funny and humorous stories', '#feca57'),
   ('Drama', 'Dramatic and emotional stories', '#48dbfb')
 ON CONFLICT (name) DO NOTHING;
-
--- Verification queries
--- SELECT table_name FROM information_schema.tables WHERE table_name IN ('tags', 'story_tags');
--- SELECT * FROM tags ORDER BY name;
--- SELECT indexname FROM pg_indexes WHERE tablename IN ('tags', 'story_tags');
-
