@@ -73,6 +73,7 @@ export function StoryDetailPageClient({
   // Edit/Delete modals state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDuplicating, setIsDuplicating] = useState(false)
 
   // Check if current user is the author
   const isAuthor = user && story && story.author_id === user.id
@@ -342,6 +343,35 @@ export function StoryDetailPageClient({
     }
   }
 
+  const handleDuplicate = async () => {
+    if (!story || isDuplicating) return
+
+    setIsDuplicating(true)
+    try {
+      const response = await fetch(`/api/stories/${story.id}/duplicate`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to duplicate story')
+      }
+
+      const data = await response.json()
+      showToast('Story duplicated successfully! Redirecting to drafts...', 'success')
+      
+      // Redirect to drafts page after a short delay
+      setTimeout(() => {
+        router.push('/drafts')
+      }, 1500)
+    } catch (err: any) {
+      console.error('Error duplicating story:', err)
+      showToast(err.message || 'Failed to duplicate story', 'error')
+    } finally {
+      setIsDuplicating(false)
+    }
+  }
+
   const handleChoice = async (choice: 'A' | 'B') => {
     // Make choice and update path
     // This will trigger useStory to reload with new path (loading state handled by useStory)
@@ -427,6 +457,15 @@ export function StoryDetailPageClient({
                         className="text-xs"
                       >
                         📊 Analytics
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDuplicate}
+                        disabled={isDuplicating}
+                        className="text-xs"
+                      >
+                        {isDuplicating ? <Spinner size="sm" /> : '📋 Duplicate'}
                       </Button>
                       <Button
                         variant="outline"

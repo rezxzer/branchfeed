@@ -7,16 +7,19 @@ import { StoryCardSkeleton } from '@/components/feed/StoryCardSkeleton'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { useToast } from '@/components/ui/toast'
 import { createClientClient } from '@/lib/supabase/client'
 import type { Story } from '@/types'
 
 export function DraftsPageClient() {
   const router = useRouter()
+  const { showToast } = useToast()
   const [stories, setStories] = useState<Story[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  const [duplicatingStoryId, setDuplicatingStoryId] = useState<string | null>(null)
 
   const loadDrafts = useCallback(async (pageNum: number) => {
     try {
@@ -118,8 +121,37 @@ export function DraftsPageClient() {
 
       // Remove from drafts list
       setStories((prev) => prev.filter((s) => s.id !== storyId))
+      showToast('Story published successfully!', 'success')
     } catch (err) {
       console.error('Error publishing story:', err)
+      showToast('Failed to publish story', 'error')
+    }
+  }
+
+  const handleDuplicate = async (storyId: string) => {
+    if (duplicatingStoryId) return
+
+    setDuplicatingStoryId(storyId)
+    try {
+      const response = await fetch(`/api/stories/${storyId}/duplicate`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to duplicate story')
+      }
+
+      const data = await response.json()
+      showToast('Story duplicated successfully!', 'success')
+      
+      // Reload drafts to show the new duplicate
+      loadDrafts(1)
+    } catch (err: any) {
+      console.error('Error duplicating story:', err)
+      showToast(err.message || 'Failed to duplicate story', 'error')
+    } finally {
+      setDuplicatingStoryId(null)
     }
   }
 
@@ -200,9 +232,18 @@ export function DraftsPageClient() {
                         variant="outline"
                         size="sm"
                         onClick={() => router.push(`/story/${story.id}`)}
-                        className={isScheduled ? "flex-1" : "flex-1"}
+                        className="flex-1"
                       >
                         Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDuplicate(story.id)}
+                        disabled={duplicatingStoryId === story.id}
+                        className="flex-1"
+                      >
+                        {duplicatingStoryId === story.id ? <Spinner size="sm" /> : '📋 Duplicate'}
                       </Button>
                     </div>
                   </div>

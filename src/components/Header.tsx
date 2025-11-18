@@ -383,6 +383,18 @@ export function Header() {
                     📑 Bookmarks
                   </Link>
                   <Link
+                    href="/collections"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      pathname === '/collections' || pathname?.startsWith('/collections/')
+                        ? 'text-brand-cyan bg-brand-iris/20'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                    )}
+                  >
+                    📚 Collections
+                  </Link>
+                  <Link
                     href="/drafts"
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(

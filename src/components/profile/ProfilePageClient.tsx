@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge'
 import { FollowButton } from './FollowButton'
+import { UserCollections } from '@/components/collections/UserCollections'
 import type { Profile, Story } from '@/types'
 
 const FollowSuggestions = dynamic(() => import('../follow/FollowSuggestions').then(mod => ({ default: mod.FollowSuggestions })), {
@@ -137,7 +138,7 @@ export function ProfilePageClient({
         </div>
 
         {/* Stories Section */}
-        <div>
+        <div className="mb-6">
           <h2 className="text-lg sm:text-xl font-semibold text-white mb-3 sm:mb-4">
             {isOwnProfile ? 'Your Stories' : 'Stories'}
           </h2>
@@ -190,6 +191,25 @@ export function ProfilePageClient({
               ))}
             </div>
           )}
+        </div>
+
+        {/* Collections Section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 className="text-lg sm:text-xl font-semibold text-white">
+              {isOwnProfile ? 'Your Collections' : 'Collections'}
+            </h2>
+            {isOwnProfile && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/collections')}
+              >
+                View All
+              </Button>
+            )}
+          </div>
+          <UserCollections userId={profile.id} isOwnProfile={isOwnProfile} />
         </div>
 
         {/* Follow Suggestions (only for own profile) */}

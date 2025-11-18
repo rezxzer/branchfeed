@@ -58,6 +58,26 @@ export interface Tag {
   updated_at: string
 }
 
+export interface Collection {
+  id: string
+  user_id: string
+  name: string
+  description: string | null
+  is_public: boolean
+  cover_image_url: string | null
+  stories_count: number
+  created_at: string
+  updated_at: string
+  // Author profile (joined from profiles table)
+  author?: {
+    id: string
+    username: string
+    avatar_url: string | null
+  }
+  // Stories in collection (optional, for detail view)
+  stories?: Story[]
+}
+
 export interface StoryNode {
   id: string
   story_id: string
