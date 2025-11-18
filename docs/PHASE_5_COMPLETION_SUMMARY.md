@@ -43,7 +43,8 @@
 
 ### Future Features
 - [x] **Shares Tracking** - Track story shares for trending (2025-01-15)
-- [ ] **Creator Earnings** - Revenue sharing, payout system
+- [x] **Creator Earnings** - Basic earnings tracking and dashboard (2025-01-15)
+- [ ] **Creator Earnings - Payout System** - Stripe Connect integration for payouts (future)
 - [ ] **Mobile App** - React Native, iOS, Android
 
 ---

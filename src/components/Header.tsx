@@ -239,6 +239,15 @@ export function Header() {
                             {t('header.profile')}
                           </Link>
                           <Link
+                            href="/earnings"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                            role="menuitem"
+                            aria-label="View earnings"
+                          >
+                            💰 Earnings
+                          </Link>
+                          <Link
                             href="/settings"
                             onClick={() => setUserMenuOpen(false)}
                             className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
@@ -403,6 +412,18 @@ export function Header() {
                     className="px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
                   >
                     {t('header.profile')}
+                  </Link>
+                  <Link
+                    href="/earnings"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                      pathname === '/earnings'
+                        ? 'text-brand-cyan bg-brand-iris/20'
+                        : 'text-gray-300 hover:bg-gray-800 hover:text-brand-cyan'
+                    )}
+                  >
+                    💰 Earnings
                   </Link>
                   <Link
                     href="/settings"
