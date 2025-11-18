@@ -74,6 +74,7 @@ export function StoryDetailPageClient({
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDuplicating, setIsDuplicating] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
   // Check if current user is the author
   const isAuthor = user && story && story.author_id === user.id
@@ -343,6 +344,48 @@ export function StoryDetailPageClient({
     }
   }
 
+  const handleExport = async () => {
+    if (!story || isExporting) return
+
+    setIsExporting(true)
+    try {
+      const response = await fetch(`/api/stories/${story.id}/export`)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to export story')
+      }
+
+      // Get filename from Content-Disposition header or generate one
+      const contentDisposition = response.headers.get('Content-Disposition')
+      let filename = `${story.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_export.json`
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename="(.+)"/)
+        if (filenameMatch) {
+          filename = filenameMatch[1]
+        }
+      }
+
+      // Download the JSON file
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      showToast('Story exported successfully!', 'success')
+    } catch (err: any) {
+      console.error('Error exporting story:', err)
+      showToast(err.message || 'Failed to export story', 'error')
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const handleDuplicate = async () => {
     if (!story || isDuplicating) return
 
@@ -457,6 +500,15 @@ export function StoryDetailPageClient({
                         className="text-xs"
                       >
                         📊 Analytics
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleExport}
+                        disabled={isExporting}
+                        className="text-xs"
+                      >
+                        {isExporting ? <Spinner size="sm" /> : '📥 Export'}
                       </Button>
                       <Button
                         variant="outline"

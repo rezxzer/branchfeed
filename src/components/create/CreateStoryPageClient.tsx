@@ -25,6 +25,7 @@ export function CreateStoryPageClient() {
   const [publishAsDraft, setPublishAsDraft] = useState(false)
   const [scheduledPublishAt, setScheduledPublishAt] = useState<string | null>(null)
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
+  const [isImporting, setIsImporting] = useState(false)
 
   const { createStory, loading, error, uploadProgress } = useCreateStory()
 
@@ -43,6 +44,55 @@ export function CreateStoryPageClient() {
       setStep('branches')
     } else if (step === 'branches') {
       setStep('root')
+    }
+  }
+
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsImporting(true)
+    try {
+      const text = await file.text()
+      const importedData = JSON.parse(text)
+
+      // Validate imported data
+      if (!importedData.story || !importedData.story.title) {
+        throw new Error('Invalid story file: missing story title')
+      }
+
+      if (!Array.isArray(importedData.nodes)) {
+        throw new Error('Invalid story file: nodes must be an array')
+      }
+
+      // Import story via API
+      const response = await fetch('/api/stories/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(importedData),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to import story')
+      }
+
+      const data = await response.json()
+      showToast('Story imported successfully! Redirecting to drafts...', 'success', 3000)
+
+      // Redirect to drafts page after a short delay
+      setTimeout(() => {
+        router.push('/drafts')
+      }, 1500)
+    } catch (err: any) {
+      console.error('Error importing story:', err)
+      showToast(err.message || 'Failed to import story', 'error', 5000)
+    } finally {
+      setIsImporting(false)
+      // Reset file input
+      event.target.value = ''
     }
   }
 
@@ -86,9 +136,41 @@ export function CreateStoryPageClient() {
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-900">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-6 sm:mb-8">
-          {t('createStory.title')}
-        </h1>
+        <div className="flex items-center justify-between mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white">
+            {t('createStory.title')}
+          </h1>
+          <div className="relative">
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleImport}
+              disabled={isImporting}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+              id="import-story-input"
+            />
+            <label
+              htmlFor="import-story-input"
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ease-smooth ${
+                isImporting
+                  ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-800 text-gray-200 hover:bg-gray-700 cursor-pointer border border-gray-700'
+              }`}
+            >
+              {isImporting ? (
+                <>
+                  <span className="animate-spin">⏳</span>
+                  <span>Importing...</span>
+                </>
+              ) : (
+                <>
+                  <span>📥</span>
+                  <span>Import Story</span>
+                </>
+              )}
+            </label>
+          </div>
+        </div>
 
         {/* Step Indicator */}
         <div className="mb-6 sm:mb-8 flex items-center justify-center gap-2 sm:gap-4 overflow-x-auto pb-2">
