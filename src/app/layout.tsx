@@ -4,6 +4,7 @@ import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { ToastProvider } from '@/components/ui/toast'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { VideoAutoplayProvider } from '@/contexts/VideoAutoplayContext'
 import { siteConfig } from '@/config/site'
 
 export const dynamic = 'force-dynamic'
@@ -63,13 +64,15 @@ export default function RootLayout({
       <body className="min-h-screen bg-slate-950 text-slate-50">
         <ErrorBoundary>
           <ToastProvider>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-1">
-                {children}
-              </main>
-              <Footer />
-            </div>
+            <VideoAutoplayProvider>
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-1">
+                  {children}
+                </main>
+                <Footer />
+              </div>
+            </VideoAutoplayProvider>
           </ToastProvider>
         </ErrorBoundary>
       </body>

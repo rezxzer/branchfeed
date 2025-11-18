@@ -7,6 +7,23 @@ import { ErrorState } from './ui/ErrorState'
 import { useTranslation } from '@/hooks/useTranslation'
 import { cn } from '@/lib/utils'
 
+// Optional video autoplay context import
+// Using try-catch to handle cases where context might not be available
+let useVideoAutoplayHook: (() => {
+  requestAutoplay: (videoId: string) => boolean
+  releaseAutoplay: (videoId: string) => void
+  canAutoplay: (videoId: string) => boolean
+  getPlayingCount: () => number
+}) | null = null
+
+try {
+  const videoAutoplayModule = require('@/contexts/VideoAutoplayContext')
+  useVideoAutoplayHook = videoAutoplayModule.useVideoAutoplay
+} catch {
+  // Context not available, continue without it
+  useVideoAutoplayHook = null
+}
+
 export interface MediaDisplayProps {
   /** Media URL (Supabase Storage public URL) */
   mediaUrl: string
@@ -68,6 +85,24 @@ export function MediaDisplay({
   const [hasError, setHasError] = useState(false)
   const lastRetryRef = useRef<number>(0)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const videoIdRef = useRef<string>(`video-${Date.now()}-${Math.random()}`)
+  
+  // Video autoplay context (optional - only if provider exists)
+  let videoAutoplay: {
+    requestAutoplay: (videoId: string) => boolean
+    releaseAutoplay: (videoId: string) => void
+    canAutoplay: (videoId: string) => boolean
+    getPlayingCount: () => number
+  } | null = null
+  
+  if (useVideoAutoplayHook) {
+    try {
+      videoAutoplay = useVideoAutoplayHook()
+    } catch {
+      // Context not available, continue without it
+      videoAutoplay = null
+    }
+  }
 
   useEffect(() => {
     setIsLoading(true)
@@ -80,25 +115,86 @@ export function MediaDisplay({
     if (!video || mediaType !== 'video') return
 
     if (autoPlay) {
-      // Try to play video when autoplay is enabled
-      const playPromise = video.play()
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            // Autoplay started successfully
-            console.debug('Video autoplay started')
-          })
-          .catch((error) => {
-            // Autoplay was prevented (browser policy)
-            console.warn('Video autoplay failed:', error)
-            // Video will show play button - user can click to play
-          })
+      // Check if we can autoplay (respect max concurrent videos limit)
+      const canPlay = !videoAutoplay || videoAutoplay.canAutoplay(videoIdRef.current)
+      
+      if (canPlay) {
+        // Request autoplay slot
+        if (videoAutoplay) {
+          const granted = videoAutoplay.requestAutoplay(videoIdRef.current)
+          if (!granted) {
+            // Max concurrent videos reached, don't autoplay
+            return
+          }
+        }
+
+        // Try to play video when autoplay is enabled
+        const playPromise = video.play()
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              // Autoplay started successfully
+              console.debug('Video autoplay started')
+            })
+            .catch((error) => {
+              // Autoplay was prevented (browser policy)
+              console.warn('Video autoplay failed:', error)
+              // Release slot if we had one
+              if (videoAutoplay) {
+                videoAutoplay.releaseAutoplay(videoIdRef.current)
+              }
+              // Video will show play button - user can click to play
+            })
+        }
       }
     } else {
       // Pause video when autoplay is disabled
       video.pause()
+      // Release autoplay slot
+      if (videoAutoplay) {
+        videoAutoplay.releaseAutoplay(videoIdRef.current)
+      }
     }
-  }, [autoPlay, mediaType])
+  }, [autoPlay, mediaType, videoAutoplay])
+
+  // Cleanup: pause video on unmount
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || mediaType !== 'video') return
+
+    return () => {
+      // Cleanup: pause video when component unmounts
+      video.pause()
+      video.src = '' // Clear source to free memory
+      // Release autoplay slot
+      if (videoAutoplay) {
+        videoAutoplay.releaseAutoplay(videoIdRef.current)
+      }
+    }
+  }, [mediaType, videoAutoplay])
+
+  // Handle video pause/play events to track state
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || mediaType !== 'video' || !videoAutoplay) return
+
+    const handlePause = () => {
+      videoAutoplay?.releaseAutoplay(videoIdRef.current)
+    }
+
+    const handlePlay = () => {
+      // Video started playing (user clicked or autoplay)
+      videoAutoplay?.requestAutoplay(videoIdRef.current)
+    }
+
+    video.addEventListener('pause', handlePause)
+    video.addEventListener('play', handlePlay)
+
+    return () => {
+      video.removeEventListener('pause', handlePause)
+      video.removeEventListener('play', handlePlay)
+    }
+  }, [mediaType, videoAutoplay])
 
   const handleLoad = () => {
     setIsLoading(false)
@@ -177,7 +273,13 @@ export function MediaDisplay({
           preload="metadata"
           playsInline
           onLoadedData={handleLoad}
-          onError={() => handleError(new Error('Video load failed'))}
+          onError={() => {
+            handleError(new Error('Video load failed'))
+            // Fallback: try to show poster or placeholder
+            if (poster) {
+              // Poster image will be shown automatically
+            }
+          }}
         />
       )}
     </div>

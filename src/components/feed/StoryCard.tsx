@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { useAuth } from '@/hooks/useAuth'
 import { useBookmarks } from '@/hooks/useBookmarks'
 import { useInViewport } from '@/hooks/useInViewport'
+import { useScrollSpeed } from '@/hooks/useScrollSpeed'
 import { Card } from '@/components/ui/Card'
 import { MediaDisplay } from '@/components/MediaDisplay'
 import { ShareStoryButton } from '@/components/story/ShareStoryButton'
@@ -31,6 +32,12 @@ export function StoryCard({ story }: StoryCardProps) {
   const { ref: viewportRef, isInViewport } = useInViewport({
     threshold: 0.5, // 50% of video must be visible
     rootMargin: '0px',
+  })
+
+  // Fast scroll detection to pause videos
+  const { isFastScrolling } = useScrollSpeed({
+    fastScrollThreshold: 1000, // pixels per second
+    debounceMs: 100,
   })
 
   const handleClick = () => {
@@ -66,6 +73,7 @@ export function StoryCard({ story }: StoryCardProps) {
       role="button"
       aria-label={`View story: ${story.title}`}
       className="bg-gray-800/50 backdrop-blur-sm border-gray-700/50 hover:border-brand-cyan/50 hover:shadow-level-2 transition-all ease-smooth cursor-pointer touch-manipulation active:scale-[0.98]"
+      data-autoplay={story.media_type === 'video' ? isInViewport : undefined}
     >
       {/* Thumbnail */}
       <div className="relative mb-4">
@@ -78,7 +86,8 @@ export function StoryCard({ story }: StoryCardProps) {
             maxWidth="w-full"
             className="mb-0"
             // Video autoplay settings for feed
-            autoPlay={story.media_type === 'video' ? isInViewport : false}
+            // Pause if scrolling fast or not in viewport
+            autoPlay={story.media_type === 'video' ? (isInViewport && !isFastScrolling) : false}
             loop={story.media_type === 'video'}
             muted={story.media_type === 'video'}
             controls={true}
