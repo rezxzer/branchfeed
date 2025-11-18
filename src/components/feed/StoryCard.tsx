@@ -87,7 +87,11 @@ export function StoryCard({ story }: StoryCardProps) {
             className="mb-0"
             // Video autoplay settings for feed
             // Pause if scrolling fast or not in viewport
-            autoPlay={story.media_type === 'video' ? (isInViewport && !isFastScrolling) : false}
+            autoPlay={
+              story.media_type === 'video' 
+                ? (isInViewport && !isFastScrolling) 
+                : false
+            }
             loop={story.media_type === 'video'}
             muted={story.media_type === 'video'}
             controls={true}

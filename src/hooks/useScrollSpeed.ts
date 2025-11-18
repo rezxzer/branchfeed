@@ -56,23 +56,38 @@ export function useScrollSpeed(
       const timeDelta = (currentTime - lastScrollTime.current) / 1000 // seconds
       const scrollDelta = Math.abs(currentScrollY - lastScrollY.current)
       
-      if (timeDelta > 0) {
+      // Clear existing timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+      
+      if (timeDelta > 0 && timeDelta < 1) { // Only calculate if less than 1 second passed
         const speed = scrollDelta / timeDelta // pixels per second
         setScrollSpeed(speed)
-        setIsFastScrolling(speed > fastScrollThreshold)
+        const isFast = speed > fastScrollThreshold
+        setIsFastScrolling(isFast)
+        
+        // If not fast scrolling, reset immediately
+        if (!isFast) {
+          timeoutRef.current = setTimeout(() => {
+            setIsFastScrolling(false)
+            setScrollSpeed(0)
+          }, debounceMs)
+        } else {
+          // If fast scrolling, reset after scroll stops
+          timeoutRef.current = setTimeout(() => {
+            setIsFastScrolling(false)
+            setScrollSpeed(0)
+          }, debounceMs * 2) // Longer timeout for fast scrolling
+        }
+      } else {
+        // Reset if too much time passed (user stopped scrolling)
+        setIsFastScrolling(false)
+        setScrollSpeed(0)
       }
 
       lastScrollY.current = currentScrollY
       lastScrollTime.current = currentTime
-
-      // Debounce: reset fast scrolling after scroll stops
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-      timeoutRef.current = setTimeout(() => {
-        setIsFastScrolling(false)
-        setScrollSpeed(0)
-      }, debounceMs)
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })

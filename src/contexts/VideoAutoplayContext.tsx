@@ -28,26 +28,30 @@ export function VideoAutoplayProvider({ children }: { children: ReactNode }) {
   const [playingVideos, setPlayingVideos] = useState<Set<string>>(new Set())
 
   const requestAutoplay = useCallback((videoId: string): boolean => {
+    let granted = false
+    
     setPlayingVideos((prev) => {
       // If already playing, allow it
       if (prev.has(videoId)) {
+        granted = true
         return prev
       }
 
       // If at max capacity, deny
       if (prev.size >= MAX_CONCURRENT_VIDEOS) {
+        granted = false
         return prev
       }
 
       // Allow and add to set
+      granted = true
       const next = new Set(prev)
       next.add(videoId)
       return next
     })
 
-    // Check if we can actually autoplay
-    return playingVideos.size < MAX_CONCURRENT_VIDEOS || playingVideos.has(videoId)
-  }, [playingVideos])
+    return granted
+  }, [])
 
   const releaseAutoplay = useCallback((videoId: string) => {
     setPlayingVideos((prev) => {
@@ -85,5 +89,14 @@ export function useVideoAutoplay() {
     throw new Error('useVideoAutoplay must be used within VideoAutoplayProvider')
   }
   return context
+}
+
+/**
+ * Optional hook that returns null if provider doesn't exist
+ * Use this when context might not be available
+ */
+export function useVideoAutoplayOptional() {
+  const context = useContext(VideoAutoplayContext)
+  return context ?? null
 }
 

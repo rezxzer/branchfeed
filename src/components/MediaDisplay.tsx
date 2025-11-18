@@ -6,23 +6,7 @@ import { Spinner } from './ui/Spinner'
 import { ErrorState } from './ui/ErrorState'
 import { useTranslation } from '@/hooks/useTranslation'
 import { cn } from '@/lib/utils'
-
-// Optional video autoplay context import
-// Using try-catch to handle cases where context might not be available
-let useVideoAutoplayHook: (() => {
-  requestAutoplay: (videoId: string) => boolean
-  releaseAutoplay: (videoId: string) => void
-  canAutoplay: (videoId: string) => boolean
-  getPlayingCount: () => number
-}) | null = null
-
-try {
-  const videoAutoplayModule = require('@/contexts/VideoAutoplayContext')
-  useVideoAutoplayHook = videoAutoplayModule.useVideoAutoplay
-} catch {
-  // Context not available, continue without it
-  useVideoAutoplayHook = null
-}
+import { useVideoAutoplayOptional } from '@/contexts/VideoAutoplayContext'
 
 export interface MediaDisplayProps {
   /** Media URL (Supabase Storage public URL) */
@@ -87,22 +71,8 @@ export function MediaDisplay({
   const videoRef = useRef<HTMLVideoElement>(null)
   const videoIdRef = useRef<string>(`video-${Date.now()}-${Math.random()}`)
   
-  // Video autoplay context (optional - only if provider exists)
-  let videoAutoplay: {
-    requestAutoplay: (videoId: string) => boolean
-    releaseAutoplay: (videoId: string) => void
-    canAutoplay: (videoId: string) => boolean
-    getPlayingCount: () => number
-  } | null = null
-  
-  if (useVideoAutoplayHook) {
-    try {
-      videoAutoplay = useVideoAutoplayHook()
-    } catch {
-      // Context not available, continue without it
-      videoAutoplay = null
-    }
-  }
+  // Video autoplay context (optional - returns null if provider doesn't exist)
+  const videoAutoplay = useVideoAutoplayOptional()
 
   useEffect(() => {
     setIsLoading(true)
