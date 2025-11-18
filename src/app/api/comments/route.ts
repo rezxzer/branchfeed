@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { checkSubscriptionLimit } from '@/lib/subscription-checks';
+import { recordEarnings } from '@/lib/earnings.server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -93,10 +94,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify story exists
+    // Verify story exists and get author_id for earnings
     const { data: story, error: storyError } = await supabase
       .from('stories')
-      .select('id')
+      .select('id, author_id')
       .eq('id', storyId)
       .single();
 
@@ -158,6 +159,18 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create comment', details: commentError.message },
         { status: 500 }
       );
+    }
+
+    // Record earnings for creator (fire-and-forget, don't block response)
+    // Only record when comment is created (not for replies to comments)
+    if (story.author_id && !parentCommentId) {
+      recordEarnings(story.author_id, storyId, 'comment', {
+        story_title: 'Story comment',
+        timestamp: new Date().toISOString(),
+      }).catch((err) => {
+        // Log error but don't fail the request
+        console.error('Error recording earnings for comment:', err);
+      });
     }
 
     return NextResponse.json({ comment }, { status: 201 });

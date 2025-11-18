@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { checkSubscriptionLimit } from '@/lib/subscription-checks'
+import { recordEarnings, getStoryAuthorId } from '@/lib/earnings.server'
 
 /**
  * POST /api/stories/[id]/like
@@ -179,6 +180,25 @@ export async function POST(
       }
 
       liked = true
+
+      // Record earnings for creator (fire-and-forget, don't block response)
+      // Only record when like is added, not when removed
+      getStoryAuthorId(id)
+        .then((authorId) => {
+          if (authorId) {
+            recordEarnings(authorId, id, 'like', {
+              story_title: 'Story like',
+              timestamp: new Date().toISOString(),
+            }).catch((err) => {
+              // Log error but don't fail the request
+              console.error('Error recording earnings for like:', err)
+            })
+          }
+        })
+        .catch((err) => {
+          // Log error but don't fail the request
+          console.error('Error getting story author for earnings:', err)
+        })
     }
 
     // Count total likes and update aggregate count using admin client (bypasses RLS)

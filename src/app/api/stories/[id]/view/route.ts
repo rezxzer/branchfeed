@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminSupabaseClient } from '@/lib/supabase/admin'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
 import { checkSubscriptionLimit } from '@/lib/subscription-checks'
+import { recordEarnings, getStoryAuthorId } from '@/lib/earnings.server'
 
 // Type for story views_count field
 interface StoryViewsData {
@@ -114,6 +115,25 @@ export async function POST(
 
         const updatedData = updatedStory as StoryViewsData
         viewsCount = updatedData.views_count ?? 0
+
+        // Record earnings for creator (fire-and-forget, don't block response)
+        // Only record if view increment was successful
+        getStoryAuthorId(id)
+          .then((authorId) => {
+            if (authorId) {
+              recordEarnings(authorId, id, 'view', {
+                story_title: 'Story view',
+                timestamp: new Date().toISOString(),
+              }).catch((err) => {
+                // Log error but don't fail the request
+                console.error('Error recording earnings for view:', err)
+              })
+            }
+          })
+          .catch((err) => {
+            // Log error but don't fail the request
+            console.error('Error getting story author for earnings:', err)
+          })
       } catch (error) {
         console.error('Error in admin client view increment:', error)
         return NextResponse.json(

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { recordEarnings } from '@/lib/earnings.server'
 
 /**
  * POST /api/stories/[id]/share
@@ -112,6 +113,18 @@ export async function POST(
         { error: 'Failed to share story' },
         { status: 500 }
       )
+    }
+
+    // Record earnings for creator (fire-and-forget, don't block response)
+    // Only record when share is added
+    if (existingStory.author_id) {
+      recordEarnings(existingStory.author_id, id, 'share', {
+        story_title: 'Story share',
+        timestamp: new Date().toISOString(),
+      }).catch((err) => {
+        // Log error but don't fail the request
+        console.error('Error recording earnings for share:', err)
+      })
     }
 
     // Get updated shares count
