@@ -41,7 +41,7 @@ export async function GET(
     // Get story and verify ownership
     const { data: story, error: storyError } = await supabase
       .from('stories')
-      .select('id, author_id, title, views_count, likes_count, comments_count, created_at')
+      .select('id, author_id, title, views_count, likes_count, shares_count, comments_count, created_at')
       .eq('id', storyId)
       .single()
 
@@ -126,7 +126,7 @@ export async function GET(
     // Engagement metrics
     const engagementRate =
       story.views_count > 0
-        ? ((story.likes_count || 0) + (story.comments_count || 0)) / story.views_count * 100
+        ? ((story.likes_count || 0) + (story.comments_count || 0) + (story.shares_count || 0)) / story.views_count * 100
         : 0
 
     return NextResponse.json({
@@ -142,6 +142,7 @@ export async function GET(
       engagement: {
         likes: story.likes_count || 0,
         comments: story.comments_count || 0,
+        shares: story.shares_count || 0,
         engagementRate: Math.round(engagementRate * 100) / 100,
       },
       paths: {

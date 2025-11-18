@@ -445,7 +445,13 @@ export function StoryDetailPageClient({
                       </Button>
                     </>
                   )}
-                  <ShareStoryButton storyId={storyId} path={currentPath} />
+                  <ShareStoryButton 
+                    storyId={storyId} 
+                    path={currentPath}
+                    initialShared={story?.userHasShared}
+                    initialSharesCount={story?.shares_count || 0}
+                    showCount={true}
+                  />
                 </div>
               </div>
             </div>

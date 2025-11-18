@@ -164,9 +164,22 @@ export function StoryCard({ story }: StoryCardProps) {
               <span className="text-[10px] uppercase tracking-wide">views</span>
             </div>
             
+            {/* Shares */}
+            {story.shares_count !== undefined && story.shares_count > 0 && (
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-slate-50">{story.shares_count}</span>
+                <span className="text-[10px] uppercase tracking-wide">shares</span>
+              </div>
+            )}
+            
             {/* Share Button */}
             <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
-              <ShareStoryButton storyId={story.id} className="scale-90 sm:scale-100" />
+              <ShareStoryButton 
+                storyId={story.id} 
+                className="scale-90 sm:scale-100"
+                initialShared={story.userHasShared}
+                initialSharesCount={story.shares_count || 0}
+              />
             </div>
           </div>
         </div>

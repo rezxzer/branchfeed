@@ -20,6 +20,7 @@ interface StoryAnalytics {
   engagement: {
     likes: number
     comments: number
+    shares: number
     engagementRate: number
   }
   paths: {
@@ -122,7 +123,7 @@ export function StoryAnalyticsClient({ storyId }: StoryAnalyticsClientProps) {
         </div>
 
         {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6">
           <Card variant="default" className="bg-gray-800/50 border-gray-700/50">
             <div className="p-4">
               <div className="text-sm text-gray-400 mb-1">Total Views</div>
@@ -146,6 +147,15 @@ export function StoryAnalyticsClient({ storyId }: StoryAnalyticsClientProps) {
               <div className="text-sm text-gray-400 mb-1">Comments</div>
               <div className="text-2xl font-bold text-white">
                 {analytics.engagement.comments.toLocaleString()}
+              </div>
+            </div>
+          </Card>
+
+          <Card variant="default" className="bg-gray-800/50 border-gray-700/50">
+            <div className="p-4">
+              <div className="text-sm text-gray-400 mb-1">Shares</div>
+              <div className="text-2xl font-bold text-white">
+                {analytics.engagement.shares.toLocaleString()}
               </div>
             </div>
           </Card>

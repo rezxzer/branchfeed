@@ -55,9 +55,10 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
     return null
   }
 
-  // Check if user has liked this story
+  // Check if user has liked/bookmarked/shared this story
   let userHasLiked = false
   let isBookmarked = false
+  let userHasShared = false
   if (user) {
     const { data: likeData } = await supabase
       .from('story_likes')
@@ -77,6 +78,16 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
       .maybeSingle()
 
     isBookmarked = !!bookmarkData
+
+    // Check if user has shared this story
+    const { data: shareData } = await supabase
+      .from('story_shares')
+      .select('id')
+      .eq('story_id', storyId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    userHasShared = !!shareData
   }
 
   // Count branches
@@ -88,6 +99,7 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
   return {
     ...data,
     userHasLiked,
+    userHasShared,
     isBookmarked,
     branches_count: branchesCount || 0,
   } as Story
@@ -112,6 +124,11 @@ export async function getTrendingStories(
     console.error('Supabase client is null. Check environment variables.')
     return []
   }
+  
+  // Get current user to check share status
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Calculate time threshold based on timeRange
   const now = new Date()
@@ -162,6 +179,7 @@ export async function getTrendingStories(
     const views = story.views_count || 0
     const likes = story.likes_count || 0
     const comments = story.comments_count || 0
+    const shares = story.shares_count || 0
     
     // Time decay factor (newer stories get boost)
     const storyAge = now.getTime() - new Date(story.created_at).getTime()
@@ -172,8 +190,8 @@ export async function getTrendingStories(
     const timeDecay = 1 / (1 + hoursSinceCreation / 24)
     
     // Trending score calculation
-    // Weights: views (1x), likes (3x), comments (2x), time decay multiplier
-    const trendingScore = (views * 1 + likes * 3 + comments * 2) * (1 + timeDecay * 0.5)
+    // Weights: views (1x), likes (3x), comments (2x), shares (2x), time decay multiplier
+    const trendingScore = (views * 1 + likes * 3 + comments * 2 + shares * 2) * (1 + timeDecay * 0.5)
     
     return {
       ...story,
@@ -187,7 +205,20 @@ export async function getTrendingStories(
   // Apply pagination
   const paginatedStories = storiesWithScore.slice(offset, offset + limit)
 
-  // Count branches for each story
+  // Get user's shared stories if authenticated
+  let userSharedStories: Set<string> = new Set()
+  if (user) {
+    const { data: userShares } = await supabase
+      .from('story_shares')
+      .select('story_id')
+      .eq('user_id', user.id)
+    
+    if (userShares) {
+      userSharedStories = new Set(userShares.map((share: { story_id: string }) => share.story_id))
+    }
+  }
+
+  // Count branches for each story and add share status
   const storiesWithBranches = await Promise.all(
     paginatedStories.map(async (story: any) => {
       const { count: branchesCount } = await supabase
@@ -201,6 +232,7 @@ export async function getTrendingStories(
         // Remove trendingScore from final result (internal calculation only)
         trendingScore: undefined,
         isBookmarked: story.isBookmarked || false,
+        userHasShared: user ? userSharedStories.has(story.id) : false,
       } as Story
     })
   )
@@ -280,8 +312,9 @@ export async function getFollowingStories(
         .select('*', { count: 'exact', head: true })
         .eq('story_id', story.id)
 
-      // Get user's bookmarked stories if authenticated
+      // Get user's bookmarked and shared stories if authenticated
       let isBookmarked = false
+      let userHasShared = false
       if (userId) {
         const { data: bookmarkData } = await supabase
           .from('bookmarks')
@@ -291,12 +324,22 @@ export async function getFollowingStories(
           .maybeSingle()
         
         isBookmarked = !!bookmarkData
+
+        const { data: shareData } = await supabase
+          .from('story_shares')
+          .select('id')
+          .eq('story_id', story.id)
+          .eq('user_id', userId)
+          .maybeSingle()
+        
+        userHasShared = !!shareData
       }
 
       return {
         ...story,
         branches_count: branchesCount || 0,
         isBookmarked,
+        userHasShared,
       } as Story
     })
   )

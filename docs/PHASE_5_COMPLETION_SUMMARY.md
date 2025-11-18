@@ -21,9 +21,10 @@
 - ✅ **Notifications System** - All notification types, Bell icon, User preferences
 
 #### Priority 3: Discovery & Engagement
-- ✅ **Trending Stories** - Algorithm and feed integration
+- ✅ **Trending Stories** - Algorithm with shares tracking and feed integration
 - ✅ **Story Recommendations** - Based on interests, history, similar stories
 - ✅ **Story Bookmarks/Favorites** - Save and manage favorite stories
+- ✅ **Shares Tracking** - Track and display story shares, integrated into trending
 
 #### Priority 4: Creator Features
 - ✅ **Story Analytics** - Views, paths, engagement metrics
@@ -41,7 +42,7 @@
 - [x] **Story Scheduling** - Schedule stories for future publish (2025-01-15)
 
 ### Future Features
-- [ ] **Shares Tracking** - Track story shares for trending
+- [x] **Shares Tracking** - Track story shares for trending (2025-01-15)
 - [ ] **Creator Earnings** - Revenue sharing, payout system
 - [ ] **Mobile App** - React Native, iOS, Android
 

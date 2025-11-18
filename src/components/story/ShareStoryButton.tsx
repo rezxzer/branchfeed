@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useToast } from '@/components/ui/toast'
+import { useShares } from '@/hooks/useShares'
 import { cn } from '@/lib/utils'
 import { encodePath } from '@/lib/pathSharing'
 
@@ -9,15 +10,32 @@ interface ShareStoryButtonProps {
   storyId: string
   path?: ('A' | 'B')[]
   className?: string
+  initialShared?: boolean
+  initialSharesCount?: number
+  showCount?: boolean
 }
 
-export function ShareStoryButton({ storyId, path, className }: ShareStoryButtonProps) {
+export function ShareStoryButton({ 
+  storyId, 
+  path, 
+  className,
+  initialShared = false,
+  initialSharesCount = 0,
+  showCount = false,
+}: ShareStoryButtonProps) {
   const { showToast } = useToast()
-  const [isSharing, setIsSharing] = useState(false)
+  const { isShared, sharesCount, loading, toggleShare } = useShares(
+    storyId,
+    initialShared,
+    initialSharesCount
+  )
+  const [isCopying, setIsCopying] = useState(false)
 
-  const handleShare = async () => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
     try {
-      setIsSharing(true)
+      setIsCopying(true)
 
       // Build base URL
       let shareUrl = `${window.location.origin}/story/${storyId}`
@@ -28,6 +46,11 @@ export function ShareStoryButton({ storyId, path, className }: ShareStoryButtonP
         if (encodedPath) {
           shareUrl += `?path=${encodedPath}`
         }
+      }
+
+      // Track share in database (if not already shared)
+      if (!isShared) {
+        await toggleShare(storyId)
       }
 
       // Try to copy to clipboard
@@ -58,7 +81,7 @@ export function ShareStoryButton({ storyId, path, className }: ShareStoryButtonP
         showToast('Link ready to copy', 'info')
       }
     } catch (err) {
-      console.error('Error copying link:', err)
+      console.error('Error sharing:', err)
       // Fallback: show prompt
       let fallbackUrl = `${window.location.origin}/story/${storyId}`
       if (path && path.length > 0) {
@@ -70,18 +93,19 @@ export function ShareStoryButton({ storyId, path, className }: ShareStoryButtonP
       prompt('Copy this link:', fallbackUrl)
       showToast('Link ready to copy', 'info')
     } finally {
-      setIsSharing(false)
+      setIsCopying(false)
     }
   }
 
   return (
     <button
       onClick={handleShare}
-      disabled={isSharing}
+      disabled={loading || isCopying}
       className={cn(
         'inline-flex items-center gap-2 rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-800 transition-colors ease-smooth',
         'disabled:opacity-50 disabled:cursor-not-allowed',
         'focus:outline-none focus:ring-2 focus:ring-brand-cyan focus:ring-offset-2 focus:ring-offset-gray-900',
+        isShared && 'border-brand-cyan/50 bg-brand-cyan/10',
         className
       )}
       aria-label="Share story link"
@@ -89,6 +113,9 @@ export function ShareStoryButton({ storyId, path, className }: ShareStoryButtonP
     >
       <span>🔗</span>
       <span className="hidden sm:inline">Share</span>
+      {showCount && sharesCount > 0 && (
+        <span className="text-xs text-gray-400">({sharesCount})</span>
+      )}
     </button>
   )
 }
