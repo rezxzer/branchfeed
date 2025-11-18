@@ -145,7 +145,7 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
           <input
             id="story-media"
             type="file"
-            accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,video/x-msvideo,.mp4,.webm,.mov,.avi"
+            accept="image/*,video/*,.mp4,.webm,.mov,.avi,.mkv"
             onChange={handleFileChange}
             className="hidden"
           />
