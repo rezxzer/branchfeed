@@ -14,7 +14,9 @@ Feed Video Autoplay System არის BranchFeed-ის სისტემა,
 
 **Location**: `src/components/feed/StoryCard.tsx`, `src/components/MediaDisplay.tsx`
 
-**Status**: 🟡 **Medium Priority** - Phase 5+ (User Experience Enhancement)
+**Status**: 🟡 **Medium Priority** - Phase 3 (User Experience Enhancement)
+
+> **Note**: Phase 3-ად გადავიტანეთ, რადგან BranchFeed-ის core არის interactive content, ასე რომ autoplay უნდა იყოს ადრეულ ეტაპზე.
 
 > ℹ️ **შენიშვნა**
 >
@@ -54,6 +56,13 @@ Feed Video Autoplay System არის BranchFeed-ის სისტემა,
    - Lazy loading (ვიდეოები იტვირთება მხოლოდ როცა viewport-ში ჩანს)
    - Preload="metadata" (მხოლოდ metadata იტვირთება)
    - Pause როცა viewport-ს გამოდის (bandwidth saving)
+   - Max concurrent videos limit (2-3 only)
+   - Cleanup on unmount (video.pause())
+
+6. **User Preference Toggle**
+   - User-ს შეუძლია autoplay-ის გამორთვა Settings-ში
+   - Data saver mode support
+   - Battery saver mode support
 
 ---
 
@@ -191,11 +200,13 @@ export function MediaDisplay({
 
 ```typescript
 interface ViewportOptions {
-  threshold?: number | number[] // 0.5 = 50% visible
+  threshold?: number | number[] // 0.5 = 50% visible, [0.25, 0.5, 0.75] for multiple triggers
   rootMargin?: string // '0px' = no margin
-  root?: Element | null // Viewport by default
+  root?: Element | null // Viewport by default, or feed container for scrollable containers
 }
 ```
+
+> **Note**: Threshold array support allows fine-grained control (e.g., preload at 25%, play at 50%).
 
 ### Video Playback Options
 
@@ -224,9 +235,11 @@ interface VideoPlaybackOptions {
 ### User Interactions
 
 1. **Click Play/Pause**: Manual control
-2. **Click Volume**: Unmute/Mute
+2. **Click Volume**: Unmute/Mute (with smooth volume fade)
 3. **Click Fullscreen**: Fullscreen mode
 4. **Scroll Away**: Automatic pause
+5. **Fast Scroll**: Pause on fast scroll (prevents unwanted autoplay)
+6. **Swipe Gestures**: Swipe up/down to next/previous video (mobile)
 
 ---
 
@@ -238,6 +251,12 @@ interface VideoPlaybackOptions {
 - **Firefox**: Autoplay allowed if muted
 - **Safari**: Autoplay allowed if muted (iOS requires user interaction)
 - **Mobile**: Autoplay might be restricted (user interaction required)
+
+### iOS Safari Specific
+
+- **playsInline**: Always required for iOS
+- **User Interaction**: May require user interaction for first autoplay
+- **Workaround**: Show play button if autoplay fails
 
 ### Fallback Behavior
 
@@ -262,6 +281,14 @@ interface VideoPlaybackOptions {
 - **Preload**: `metadata` (not `auto`)
 - **Pause on Exit**: Saves bandwidth
 - **Lazy Loading**: Only load when visible
+- **Max Concurrent Videos**: Limit to 2-3 videos playing simultaneously
+- **Cleanup**: video.pause() on component unmount
+
+### Battery Saver Mode
+
+- **Low Battery Detection**: Reduce autoplay on low battery
+- **Poor Connection**: Reduce autoplay on slow connection
+- **User Preference**: Respect user's data saver settings
 
 ---
 
@@ -277,6 +304,12 @@ interface VideoPlaybackOptions {
 - [ ] Mobile testing
 - [ ] Performance optimization
 - [ ] User experience testing
+- [ ] Battery Saver Mode Support (reduce autoplay on low battery)
+- [ ] User Opt-Out Toggle (Settings)
+- [ ] Max Concurrent Videos Limit (2-3 only)
+- [ ] Cleanup on Unmount (video.pause())
+- [ ] Debugging Attributes (data-autoplay)
+- [ ] Fallback Image on Error
 
 ---
 
@@ -317,10 +350,24 @@ interface VideoPlaybackOptions {
    - Touch controls work
    - Autoplay works (if allowed)
    - Performance acceptable
+   - Swipe gestures work
+   - iOS Safari compatibility
+
+8. ✅ **Low Bandwidth**:
+   - Autoplay reduces on slow connection
+   - Pause on exit saves bandwidth
+   - Throttle network test passes
+
+9. ✅ **Accessibility**:
+   - ARIA live region announces autoplay
+   - Keyboard navigation works
+   - Screen reader support
 
 ---
 
 ## 🔄 Future Enhancements
+
+### Short-term (Phase 3-4)
 
 - **Volume Persistence**: Remember user's volume preference
 - **Playback Speed**: Adjustable playback speed
@@ -329,6 +376,23 @@ interface VideoPlaybackOptions {
 - **Analytics**: Track video view duration
 - **Preload Next**: Preload next video in feed
 - **Swipe Gestures**: Swipe to next/previous video
+- **Volume Fade**: Smooth unmute transition
+- **Playlist Mode**: Auto-advance to next story
+- **Watch Later Queue**: Save videos for later viewing
+
+### Medium-term (Phase 5+)
+
+- **Bandwidth Analytics**: Track autoplay starts/pauses for analytics
+- **User Opt-Out**: Toggle autoplay in Settings
+- **Browser Policy Workarounds**: Advanced workarounds for strict policies
+- **Eco Mode**: Reduce autoplay on low battery/poor connection
+- **Personalized Feeds**: Autoplay based on user history and preferences
+
+### Long-term (Phase 6+)
+
+- **AI Autoplay**: AI-powered video recommendations for autoplay (based on user preferences)
+- **VR Autoplay**: VR mode immersive autoplay experience
+- **Social Autoplay**: Sync autoplay with friends' viewing sessions
 
 ---
 
@@ -337,12 +401,134 @@ interface VideoPlaybackOptions {
 - **Browser Policies**: Autoplay might be blocked by browser policies
 - **User Experience**: Always provide manual controls
 - **Performance**: Optimize for mobile devices
-- **Accessibility**: Ensure keyboard navigation works
+- **Accessibility**: Ensure keyboard navigation works, announce autoplay with ARIA live region
 - **Bandwidth**: Consider user's data usage
+- **Debugging**: Use `data-autoplay` attribute for debugging autoplay state
+- **Error Handling**: Provide fallback image if video fails to load
+- **Cleanup**: Always cleanup video resources on component unmount
+- **iOS Safari**: Always use `playsInline` attribute for iOS compatibility
+- **Scrollable Containers**: Use `root` option for feed containers that are scrollable
 
 ---
 
 **Last Updated**: 2025-01-15  
-**Version**: 1.0  
-**Status**: Phase 5+ (User Experience Enhancement) - 🟡 Medium Priority
+**Version**: 1.1  
+**Status**: Phase 3 (User Experience Enhancement) - 🟡 Medium Priority
 
+---
+
+## 💡 Implementation Improvements & Recommendations
+
+### 🔧 Suggested Improvements
+
+#### 1. Overview & Features
+- ✅ **Phase Priority**: Changed to Phase 3 (from Phase 5+) - BranchFeed's core is interactive content, so autoplay should be early
+- ✅ **User Preference Toggle**: Added to Features section (autoplay off for data savers)
+
+#### 2. Implementation Details
+- **Root Option**: Add `root` option for scrollable feed containers (e.g., `root: document.querySelector('#feed-container')`)
+- **Error Handler**: Add `onError` handler in MediaDisplay (e.g., fallback image)
+- **Debugging Attribute**: Add `data-autoplay` attribute in StoryCard for debugging
+
+#### 3. Configuration Options
+- ✅ **Threshold Array**: Support for threshold arrays (e.g., `[0.25, 0.5, 0.75]`) for multiple triggers
+  - **Why?** Fine-grained control (e.g., preload at 25%, play at 50%)
+
+#### 4. User Experience
+- ✅ **Pause on Fast Scroll**: Pause if user scrolls fast (prevents unwanted autoplay)
+- ✅ **Swipe Gestures**: Swipe up/down to next/previous video (mobile)
+
+#### 5. Browser Compatibility
+- ✅ **iOS Safari**: Always use `playsInline` attribute (iOS autoplay is more restricted)
+
+#### 6. Performance Considerations
+- ✅ **Cleanup**: `video.pause()` on component unmount
+- ✅ **Max Concurrent Videos**: Limit to 2-3 videos playing simultaneously
+
+#### 7. Requirements Checklist
+- ✅ **Battery Saver Mode**: Reduce autoplay on low battery
+- ✅ **User Opt-Out**: Toggle in Settings
+
+#### 8. Testing Checklist
+- ✅ **Low Bandwidth Test**: Throttle network test
+
+#### 9. Notes
+- ✅ **Accessibility**: Announce autoplay with ARIA live region
+
+---
+
+## 🚀 Recommended Additions
+
+### Security & Performance
+
+1. **Bandwidth Analytics**
+   - Track autoplay starts/pauses for analytics
+   - Monitor user data usage patterns
+   - Optimize based on usage data
+
+2. **User Opt-Out**
+   - Toggle autoplay in Settings page
+   - Respect user preferences
+   - Data saver mode integration
+
+### UX/UI Enhancements
+
+1. **Swipe Gestures**
+   - Swipe up/down to navigate between videos
+   - Mobile-first gesture support
+   - Smooth transitions
+
+2. **Volume Fade**
+   - Smooth unmute transition
+   - Gradual volume increase
+   - Better user experience
+
+### Feature Additions
+
+1. **Playlist Mode**
+   - Auto-advance to next story
+   - Continuous playback
+   - Skip option
+
+2. **Watch Later Queue**
+   - Save videos for later viewing
+   - Queue management
+   - Offline viewing support
+
+### Documentation Enhancements
+
+1. **Browser Policy Workarounds Table**
+   - Detailed workarounds for each browser
+   - Platform-specific solutions
+   - Testing guidelines
+
+---
+
+## 🌟 Innovation Ideas
+
+### AI-Powered Features
+
+- **AI Autoplay**: AI-powered video recommendations for autoplay based on user preferences
+- **Personalized Feeds**: Autoplay based on user history and engagement patterns
+
+### Advanced Features
+
+- **VR Autoplay**: VR mode immersive autoplay experience
+- **Eco Mode**: Reduce autoplay on low battery/poor connection (intelligent throttling)
+- **Social Autoplay**: Sync autoplay with friends' viewing sessions (social features)
+
+---
+
+## 📋 Browser Policy Workarounds
+
+| Browser | Policy | Workaround |
+|---------|--------|------------|
+| Chrome/Edge | Autoplay allowed if muted | Always use `muted={true}` |
+| Firefox | Autoplay allowed if muted | Always use `muted={true}` |
+| Safari (Desktop) | Autoplay allowed if muted | Always use `muted={true}` |
+| Safari (iOS) | Requires user interaction | Show play button, use `playsInline` |
+| Mobile (General) | May require user interaction | Graceful fallback to manual play |
+
+---
+
+**Implementation Status**: ✅ Core features implemented, enhancements planned for future phases
