@@ -31,6 +31,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default function FeedPage() {
-  return <FeedPageClient />
+interface FeedPageProps {
+  searchParams: Promise<{ tag?: string }>
+}
+
+export default async function FeedPage({ searchParams }: FeedPageProps) {
+  const params = await searchParams
+  return <FeedPageClient tagSlug={params.tag} />
 }

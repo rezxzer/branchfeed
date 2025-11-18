@@ -131,7 +131,8 @@ export async function getStoryById(storyId: string): Promise<Story | null> {
 export async function getTrendingStories(
   limit: number = 20,
   offset: number = 0,
-  timeRange: '24h' | '7d' | '30d' | 'all' = '7d'
+  timeRange: '24h' | '7d' | '30d' | 'all' = '7d',
+  tagId?: string
 ): Promise<Story[]> {
   const supabase = await createServerSupabaseClient()
 
@@ -200,8 +201,22 @@ export async function getTrendingStories(
     return []
   }
 
+  // Filter by tag after fetching if tagId is provided
+  // Note: Supabase PostgREST doesn't support direct filtering on nested relations
+  let filteredStories = stories
+  if (tagId) {
+    filteredStories = stories.filter((story: any) => {
+      const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+      return tags.some((tag: any) => tag.id === tagId)
+    })
+  }
+
+  if (filteredStories.length === 0) {
+    return []
+  }
+
   // Calculate trending score for each story
-  const storiesWithScore = stories.map((story: any) => {
+  const storiesWithScore = filteredStories.map((story: any) => {
     const views = story.views_count || 0
     const likes = story.likes_count || 0
     const comments = story.comments_count || 0

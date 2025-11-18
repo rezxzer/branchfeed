@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
+    const tagId = searchParams.get('tagId') || undefined
     const offset = (page - 1) * limit
 
     // Get list of users that current user follows
@@ -67,7 +68,7 @@ export async function GET(request: NextRequest) {
     const followingIds = following.map((f) => f.following_id)
 
     // Get stories from followed users
-    const { data: stories, error: storiesError, count } = await supabase
+    let query = supabase
       .from('stories')
       .select(
         `
@@ -76,6 +77,17 @@ export async function GET(request: NextRequest) {
           id,
           username,
           avatar_url
+        ),
+        story_tags(
+          tag:tags(
+            id,
+            name,
+            slug,
+            description,
+            color,
+            created_at,
+            updated_at
+          )
         )
       `,
         { count: 'exact' }
@@ -83,6 +95,13 @@ export async function GET(request: NextRequest) {
       .eq('is_root', true)
       .eq('status', 'published') // Only show published stories
       .in('author_id', followingIds)
+
+    // Filter by tag if provided
+    if (tagId) {
+      query = query.eq('story_tags.tag_id', tagId)
+    }
+
+    const { data: stories, error: storiesError, count } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 

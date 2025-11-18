@@ -11,7 +11,7 @@ export type TimeRange = '24h' | '7d' | '30d' | 'all'
 const STORIES_PER_PAGE = 10
 const LOAD_MORE_DEBOUNCE_MS = 500
 
-export function useFeed(feedType: FeedType = 'all') {
+export function useFeed(feedType: FeedType = 'all', tagId?: string) {
   const [stories, setStories] = useState<Story[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -22,7 +22,7 @@ export function useFeed(feedType: FeedType = 'all') {
   const lastLoadMoreRef = useRef<number>(0)
 
   const loadFeed = useCallback(
-    async (pageNum: number, sort: SortType, type: FeedType, range: TimeRange) => {
+    async (pageNum: number, sort: SortType, type: FeedType, range: TimeRange, tag?: string) => {
       try {
         setLoading(true)
         setError(null)
@@ -32,7 +32,13 @@ export function useFeed(feedType: FeedType = 'all') {
 
         if (type === 'following') {
           // Fetch from following feed API
-          const response = await fetch(`/api/feed/following?page=${pageNum}&limit=${STORIES_PER_PAGE}`)
+          const url = new URL('/api/feed/following', window.location.origin)
+          url.searchParams.set('page', pageNum.toString())
+          url.searchParams.set('limit', STORIES_PER_PAGE.toString())
+          if (tag) {
+            url.searchParams.set('tagId', tag)
+          }
+          const response = await fetch(url.toString())
           if (!response.ok) {
             throw new Error('Failed to fetch following feed')
           }
@@ -41,7 +47,14 @@ export function useFeed(feedType: FeedType = 'all') {
           totalPages = data.pagination?.totalPages || 0
         } else if (sort === 'trending') {
           // Fetch from trending API
-          const response = await fetch(`/api/feed/trending?page=${pageNum}&limit=${STORIES_PER_PAGE}&timeRange=${range}`)
+          const url = new URL('/api/feed/trending', window.location.origin)
+          url.searchParams.set('page', pageNum.toString())
+          url.searchParams.set('limit', STORIES_PER_PAGE.toString())
+          url.searchParams.set('timeRange', range)
+          if (tag) {
+            url.searchParams.set('tagId', tag)
+          }
+          const response = await fetch(url.toString())
           if (!response.ok) {
             throw new Error('Failed to fetch trending stories')
           }
@@ -51,7 +64,7 @@ export function useFeed(feedType: FeedType = 'all') {
         } else {
           // Fetch from all stories
           const offset = (pageNum - 1) * STORIES_PER_PAGE
-          storiesData = await getRootStoriesClient(STORIES_PER_PAGE, offset, sort)
+          storiesData = await getRootStoriesClient(STORIES_PER_PAGE, offset, sort, tag)
         }
 
         if (pageNum === 1) {
@@ -81,9 +94,9 @@ export function useFeed(feedType: FeedType = 'all') {
 
   useEffect(() => {
     setPage(1)
-    loadFeed(1, sortBy, feedType, timeRange)
+    loadFeed(1, sortBy, feedType, timeRange, tagId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sortBy, feedType, timeRange])
+  }, [sortBy, feedType, timeRange, tagId])
 
   const loadMore = useCallback(() => {
     const now = Date.now()
@@ -92,11 +105,11 @@ export function useFeed(feedType: FeedType = 'all') {
 
     if (!loading && hasMore) {
       const nextPage = page + 1
-      loadFeed(nextPage, sortBy, feedType, timeRange)
+      loadFeed(nextPage, sortBy, feedType, timeRange, tagId)
       setPage(nextPage)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, hasMore, page, sortBy, feedType, timeRange])
+  }, [loading, hasMore, page, sortBy, feedType, timeRange, tagId])
 
   return {
     stories,

@@ -314,12 +314,14 @@ export async function getStoryByIdClient(storyId: string): Promise<Story | null>
  * @param limit - Number of stories to fetch (default: 20)
  * @param offset - Offset for pagination (default: 0)
  * @param sortBy - Sort type: 'recent' | 'popular' | 'trending' (default: 'recent')
+ * @param tagId - Optional tag ID to filter stories by tag
  * @returns Array of root stories
  */
 export async function getRootStoriesClient(
   limit: number = 20,
   offset: number = 0,
-  sortBy: 'recent' | 'popular' | 'trending' = 'recent'
+  sortBy: 'recent' | 'popular' | 'trending' = 'recent',
+  tagId?: string
 ): Promise<Story[]> {
   const supabase = createClientClient()
 
@@ -341,7 +343,8 @@ export async function getRootStoriesClient(
     orderBy = 'views_count'
   }
 
-  const { data, error } = await supabase
+  // Build query
+  let query = supabase
     .from('stories')
     .select(
       `
@@ -350,10 +353,23 @@ export async function getRootStoriesClient(
         id,
         username,
         avatar_url
+      ),
+      story_tags(
+        tag:tags(
+          id,
+          name,
+          slug,
+          description,
+          color,
+          created_at,
+          updated_at
+        )
       )
     `
     )
     .eq('is_root', true)
+
+  const { data, error } = await query
     .order(orderBy, { ascending })
     .range(offset, offset + limit - 1)
 
@@ -373,6 +389,16 @@ export async function getRootStoriesClient(
     return []
   }
 
+  // Filter by tag after fetching if tagId is provided
+  // Note: Supabase PostgREST doesn't support direct filtering on nested relations
+  let storiesData = data
+  if (tagId && storiesData) {
+    storiesData = storiesData.filter((story: any) => {
+      const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+      return tags.some((tag: any) => tag.id === tagId)
+    })
+  }
+
   // Get user's bookmarked stories if authenticated
   let userBookmarkedStories: Set<string> = new Set()
   if (user) {
@@ -388,7 +414,7 @@ export async function getRootStoriesClient(
 
   // Count branches for each story and add bookmark status
   const storiesWithBranches = await Promise.all(
-    (data || []).map(async (story: any) => {
+    (storiesData || []).map(async (story: any) => {
       try {
         const { count, error: countError } = await supabase
           .from('story_nodes')
@@ -404,10 +430,14 @@ export async function getRootStoriesClient(
           } as Story
         }
 
+        // Extract tags from nested structure
+        const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+
         return {
           ...story,
           branches_count: count || 0,
           isBookmarked: user ? userBookmarkedStories.has(story.id) : false,
+          tags,
         } as Story
       } catch (err) {
         // If there's any error counting branches, default to 0

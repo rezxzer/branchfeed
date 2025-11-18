@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
     const timeRange = (searchParams.get('timeRange') || '7d') as '24h' | '7d' | '30d' | 'all'
+    const tagId = searchParams.get('tagId') || undefined
     
     const offset = (page - 1) * limit
 
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get trending stories
-    const stories = await getTrendingStories(limit, offset, timeRange)
+    const stories = await getTrendingStories(limit, offset, timeRange, tagId)
 
     return NextResponse.json({
       stories,
