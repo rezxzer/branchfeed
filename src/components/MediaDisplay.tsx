@@ -90,10 +90,14 @@ export function MediaDisplay({
       
       if (canPlay) {
         // Request autoplay slot
+        let granted = true
         if (videoAutoplay) {
-          const granted = videoAutoplay.requestAutoplay(videoIdRef.current)
+          granted = videoAutoplay.requestAutoplay(videoIdRef.current)
           if (!granted) {
             // Max concurrent videos reached, don't autoplay
+            console.debug('Video autoplay denied: max concurrent videos reached', {
+              videoId: videoIdRef.current,
+            })
             return
           }
         }
@@ -104,11 +108,17 @@ export function MediaDisplay({
           playPromise
             .then(() => {
               // Autoplay started successfully
-              console.debug('Video autoplay started')
+              console.debug('Video autoplay started successfully', {
+                videoId: videoIdRef.current,
+                url: mediaUrl.substring(0, 50) + '...',
+              })
             })
             .catch((error) => {
               // Autoplay was prevented (browser policy)
-              console.warn('Video autoplay failed:', error)
+              console.warn('Video autoplay failed:', error, {
+                videoId: videoIdRef.current,
+                url: mediaUrl.substring(0, 50) + '...',
+              })
               // Release slot if we had one
               if (videoAutoplay) {
                 videoAutoplay.releaseAutoplay(videoIdRef.current)
@@ -116,6 +126,11 @@ export function MediaDisplay({
               // Video will show play button - user can click to play
             })
         }
+      } else {
+        console.debug('Video autoplay denied: cannot autoplay', {
+          videoId: videoIdRef.current,
+          hasContext: !!videoAutoplay,
+        })
       }
     } else {
       // Pause video when autoplay is disabled
