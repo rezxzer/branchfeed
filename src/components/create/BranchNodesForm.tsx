@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
@@ -21,6 +23,7 @@ export function BranchNodesForm({
   onBack,
 }: BranchNodesFormProps) {
   const { t } = useTranslation()
+  const { showToast } = useToast()
   const [nodes, setNodes] = useState<BranchNodeData[]>(initialNodes)
 
   const addNode = () => {
@@ -57,6 +60,83 @@ export function BranchNodesForm({
       )
     )
   }
+
+  const handleFileChange = (
+    nodeId: string,
+    choice: 'choiceA' | 'choiceB',
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Basic validation
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      showToast(
+        `File size must be less than 10MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`,
+        'error',
+        5000
+      )
+      return
+    }
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'video/mp4', 'video/webm']
+    if (!validTypes.includes(file.type)) {
+      showToast(
+        'Please upload an image (JPEG, PNG, WebP) or video (MP4, WebM) file.',
+        'error',
+        5000
+      )
+      return
+    }
+
+    // Create preview URL
+    const previewUrl = URL.createObjectURL(file)
+    const mediaType = file.type.startsWith('image/') ? 'image' : 'video'
+
+    // Update choice with media
+    updateChoice(nodeId, choice, {
+      media: file,
+      mediaUrl: previewUrl,
+      mediaType: mediaType,
+    })
+  }
+
+  const handleRemoveMedia = (
+    nodeId: string,
+    choice: 'choiceA' | 'choiceB'
+  ) => {
+    const node = nodes.find((n) => n.id === nodeId)
+    if (!node) return
+
+    // Revoke object URL if it's a blob URL
+    const mediaUrl = choice === 'choiceA' ? node.choiceA.mediaUrl : node.choiceB.mediaUrl
+    if (mediaUrl && mediaUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(mediaUrl)
+    }
+
+    // Clear media
+    updateChoice(nodeId, choice, {
+      media: null,
+      mediaUrl: undefined,
+      mediaType: undefined,
+    })
+  }
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      nodes.forEach((node) => {
+        if (node.choiceA.mediaUrl?.startsWith('blob:')) {
+          URL.revokeObjectURL(node.choiceA.mediaUrl)
+        }
+        if (node.choiceB.mediaUrl?.startsWith('blob:')) {
+          URL.revokeObjectURL(node.choiceB.mediaUrl)
+        }
+      })
+    }
+  }, [])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,7 +210,64 @@ export function BranchNodesForm({
                     }
                     placeholder="Enter choice A content..."
                     rows={2}
+                    className="mb-3"
                   />
+                  
+                  {/* Media Upload for Choice A */}
+                  <div className="mb-3">
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={(e) => handleFileChange(node.id, 'choiceA', e)}
+                      className="hidden"
+                      id={`media-a-${node.id}`}
+                    />
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor={`media-a-${node.id}`}
+                        className="cursor-pointer inline-block px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors ease-smooth"
+                      >
+                        {node.choiceA.media ? '📎 Change Media' : '📎 Add Media'}
+                      </label>
+                      {node.choiceA.media && (
+                        <>
+                          <span className="text-xs text-gray-400">{node.choiceA.media.name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveMedia(node.id, 'choiceA')}
+                            className="text-xs text-error hover:text-error"
+                          >
+                            ✕ Remove
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Media Preview for Choice A */}
+                  {node.choiceA.mediaUrl && (
+                    <div className="mb-3">
+                      <div className="relative aspect-[9/16] w-full max-w-[200px] rounded-lg overflow-hidden bg-gray-700">
+                        {node.choiceA.mediaType === 'video' ? (
+                          <video
+                            src={node.choiceA.mediaUrl}
+                            className="w-full h-full object-cover"
+                            controls
+                          />
+                        ) : (
+                          <Image
+                            src={node.choiceA.mediaUrl}
+                            alt="Choice A preview"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Choice B */}
@@ -147,7 +284,64 @@ export function BranchNodesForm({
                     }
                     placeholder="Enter choice B content..."
                     rows={2}
+                    className="mb-3"
                   />
+                  
+                  {/* Media Upload for Choice B */}
+                  <div className="mb-3">
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={(e) => handleFileChange(node.id, 'choiceB', e)}
+                      className="hidden"
+                      id={`media-b-${node.id}`}
+                    />
+                    <div className="flex items-center gap-2">
+                      <label
+                        htmlFor={`media-b-${node.id}`}
+                        className="cursor-pointer inline-block px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors ease-smooth"
+                      >
+                        {node.choiceB.media ? '📎 Change Media' : '📎 Add Media'}
+                      </label>
+                      {node.choiceB.media && (
+                        <>
+                          <span className="text-xs text-gray-400">{node.choiceB.media.name}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveMedia(node.id, 'choiceB')}
+                            className="text-xs text-error hover:text-error"
+                          >
+                            ✕ Remove
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Media Preview for Choice B */}
+                  {node.choiceB.mediaUrl && (
+                    <div className="mb-3">
+                      <div className="relative aspect-[9/16] w-full max-w-[200px] rounded-lg overflow-hidden bg-gray-700">
+                        {node.choiceB.mediaType === 'video' ? (
+                          <video
+                            src={node.choiceB.mediaUrl}
+                            className="w-full h-full object-cover"
+                            controls
+                          />
+                        ) : (
+                          <Image
+                            src={node.choiceB.mediaUrl}
+                            alt="Choice B preview"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
