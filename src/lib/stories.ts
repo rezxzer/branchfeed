@@ -228,6 +228,24 @@ export async function createStory(data: CreateStoryData): Promise<string> {
       }
     }
 
+    // 4. Associate tags with story (if provided)
+    if (data.tagIds && data.tagIds.length > 0) {
+      const storyTags = data.tagIds.map((tagId) => ({
+        story_id: storyId,
+        tag_id: tagId,
+      }))
+
+      const { error: tagsError } = await supabase
+        .from('story_tags')
+        .insert(storyTags)
+
+      if (tagsError) {
+        console.error('Error associating tags with story:', tagsError)
+        // Don't fail story creation if tags fail, just log the error
+        // Tags can be added later
+      }
+    }
+
     return storyId
   } catch (error) {
     console.error('Error in createStory:', error)

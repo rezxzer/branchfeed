@@ -4,6 +4,7 @@ import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
 import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
+import { TagSelector } from './TagSelector'
 import type { RootStoryData, BranchNodeData } from '@/types/create'
 
 interface StoryPreviewProps {
@@ -17,6 +18,8 @@ interface StoryPreviewProps {
   onPublishAsDraftChange?: (value: boolean) => void
   scheduledPublishAt?: string | null
   onScheduledPublishAtChange?: (value: string | null) => void
+  selectedTagIds?: string[]
+  onTagIdsChange?: (tagIds: string[]) => void
 }
 
 export function StoryPreview({
@@ -30,6 +33,8 @@ export function StoryPreview({
   onPublishAsDraftChange,
   scheduledPublishAt = null,
   onScheduledPublishAtChange,
+  selectedTagIds = [],
+  onTagIdsChange,
 }: StoryPreviewProps) {
   const { t } = useTranslation()
   
@@ -117,6 +122,17 @@ export function StoryPreview({
           ))}
         </div>
       </div>
+
+      {/* Tags Selector */}
+      {onTagIdsChange && (
+        <div className="mb-6">
+          <TagSelector
+            selectedTagIds={selectedTagIds}
+            onSelectionChange={onTagIdsChange}
+            maxTags={5}
+          />
+        </div>
+      )}
 
       {/* Draft/Published Toggle */}
       {onPublishAsDraftChange && (

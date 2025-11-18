@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/toast'
 import { RootStoryForm } from './RootStoryForm'
 import { BranchNodesForm } from './BranchNodesForm'
 import { StoryPreview } from './StoryPreview'
+import { TagSelector } from './TagSelector'
 import { Progress } from '@/components/ui/Progress'
 import { useCreateStory } from '@/hooks/useCreateStory'
 import type { RootStoryData, BranchNodeData } from '@/types/create'
@@ -23,6 +24,7 @@ export function CreateStoryPageClient() {
   const [branchNodes, setBranchNodes] = useState<BranchNodeData[]>([])
   const [publishAsDraft, setPublishAsDraft] = useState(false)
   const [scheduledPublishAt, setScheduledPublishAt] = useState<string | null>(null)
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([])
 
   const { createStory, loading, error, uploadProgress } = useCreateStory()
 
@@ -60,6 +62,7 @@ export function CreateStoryPageClient() {
         nodes: branchNodes,
         status: publishAsDraft ? 'draft' : 'published',
         scheduled_publish_at: scheduledAt,
+        tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
       })
 
       // Show success toast
@@ -167,6 +170,8 @@ export function CreateStoryPageClient() {
             onPublishAsDraftChange={setPublishAsDraft}
             scheduledPublishAt={scheduledPublishAt}
             onScheduledPublishAtChange={setScheduledPublishAt}
+            selectedTagIds={selectedTagIds}
+            onTagIdsChange={setSelectedTagIds}
           />
         )}
 

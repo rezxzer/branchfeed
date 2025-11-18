@@ -39,12 +39,23 @@ export interface Story {
   userHasLiked?: boolean // whether the current user has liked this story (server-side only)
   userHasShared?: boolean // whether the current user has shared this story (server-side only)
   isBookmarked?: boolean // whether the current user has bookmarked this story
+  tags?: Tag[] // tags associated with this story
   // Author profile (joined from profiles table)
   author?: {
     id: string
     username: string
     avatar_url: string | null
   }
+}
+
+export interface Tag {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  color: string | null
+  created_at: string
+  updated_at: string
 }
 
 export interface StoryNode {
