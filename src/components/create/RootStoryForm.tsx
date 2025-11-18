@@ -127,7 +127,7 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
             htmlFor="story-media"
             className="block text-sm font-medium text-gray-300 mb-2"
           >
-            {t('createStory.root.media')}
+            {t('createStory.root.media')} <span className="text-gray-400 text-xs">(Image or Video)</span>
             <span className="text-error ml-1">*</span>
           </label>
           <input
@@ -137,17 +137,38 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
             onChange={handleFileChange}
             className="hidden"
           />
-          <label
-            htmlFor="story-media"
-            className="cursor-pointer inline-block px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors ease-smooth"
-          >
-            {media ? t('createStory.root.media') : t('createStory.root.media')}
-          </label>
-          {media && (
-            <span className="ml-3 text-sm text-gray-300">{media.name}</span>
-          )}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <label
+              htmlFor="story-media"
+              className="cursor-pointer inline-flex items-center justify-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors ease-smooth border border-gray-600 hover:border-brand-cyan/50"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              {media ? (
+                <span className="text-sm font-medium">
+                  {mediaType === 'video' ? '📹 Change Video' : '🖼️ Change Image'}
+                </span>
+              ) : (
+                <span className="text-sm font-medium">Upload Image or Video</span>
+              )}
+            </label>
+            {media && (
+              <div className="flex items-center gap-2 px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-700/50">
+                <span className="text-sm text-gray-300">
+                  {mediaType === 'video' ? '📹' : '🖼️'} {media.name}
+                </span>
+                <span className="text-xs text-gray-500">
+                  ({(media.size / 1024 / 1024).toFixed(2)} MB)
+                </span>
+              </div>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-gray-400">
+            Supported formats: Images (JPEG, PNG, WebP) or Videos (MP4, WebM). Max size: 10MB
+          </p>
           {errors.media && (
-            <p className="mt-1 text-sm text-error">{errors.media}</p>
+            <p className="mt-2 text-sm text-error">{errors.media}</p>
           )}
         </div>
 
