@@ -15,8 +15,7 @@ const nextConfig = {
   },
   // Compression
   compress: true,
-  // Production optimizations
-  swcMinify: true,
+  // Production optimizations (swcMinify is default in Next.js 15, no need to specify)
   // Suppress workspace root warning
   // Uncomment if you have multiple lockfiles in parent directories
   // outputFileTracingRoot: path.join(__dirname),

@@ -6,8 +6,18 @@
 
 import { Resend } from 'resend'
 
-// Initialize Resend client
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Initialize Resend client lazily (only when needed)
+let resend: Resend | null = null
+
+function getResendClient(): Resend | null {
+  if (!process.env.RESEND_API_KEY) {
+    return null
+  }
+  if (!resend) {
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return resend
+}
 
 // Email configuration
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'notifications@branchfeed.com'
@@ -27,12 +37,13 @@ export interface EmailOptions {
  */
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    if (!process.env.RESEND_API_KEY) {
+    const client = getResendClient()
+    if (!client) {
       console.warn('RESEND_API_KEY not set. Email sending skipped.')
       return false
     }
 
-    const { data, error } = await resend.emails.send({
+    const { data, error } = await client.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: options.to,
       subject: options.subject,

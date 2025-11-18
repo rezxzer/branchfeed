@@ -10,6 +10,9 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { isAdmin } from '@/lib/admin';
 import { UserDetailsClient } from '@/components/admin/UserDetailsClient';
 
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 export default async function AdminUserDetailsPage({
   params,
 }: {
