@@ -96,11 +96,6 @@ export async function GET(request: NextRequest) {
       .eq('status', 'published') // Only show published stories
       .in('author_id', followingIds)
 
-    // Filter by tag if provided
-    if (tagId) {
-      query = query.eq('story_tags.tag_id', tagId)
-    }
-
     const { data: stories, error: storiesError, count } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -113,13 +108,32 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Filter by tag after fetching if tagId is provided
+    // Note: Supabase PostgREST doesn't support direct filtering on nested relations
+    let filteredStories = stories || []
+    if (tagId && filteredStories.length > 0) {
+      filteredStories = filteredStories.filter((story: any) => {
+        const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+        return tags.some((tag: any) => tag.id === tagId)
+      })
+    }
+
+    // Extract tags from nested structure for each story
+    const storiesWithTags = filteredStories.map((story: any) => {
+      const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+      return {
+        ...story,
+        tags,
+      }
+    })
+
     return NextResponse.json({
-      stories: stories || [],
+      stories: storiesWithTags,
       pagination: {
         page,
         limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit),
+        total: filteredStories.length,
+        totalPages: Math.ceil(filteredStories.length / limit),
       },
     })
   } catch (error: any) {
