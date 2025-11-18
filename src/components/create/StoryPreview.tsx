@@ -15,6 +15,8 @@ interface StoryPreviewProps {
   error: Error | null
   publishAsDraft?: boolean
   onPublishAsDraftChange?: (value: boolean) => void
+  scheduledPublishAt?: string | null
+  onScheduledPublishAtChange?: (value: string | null) => void
 }
 
 export function StoryPreview({
@@ -26,8 +28,25 @@ export function StoryPreview({
   error,
   publishAsDraft = false,
   onPublishAsDraftChange,
+  scheduledPublishAt = null,
+  onScheduledPublishAtChange,
 }: StoryPreviewProps) {
   const { t } = useTranslation()
+  
+  const handleScheduleToggle = (enabled: boolean) => {
+    if (onScheduledPublishAtChange) {
+      if (enabled) {
+        // Set default to 1 hour from now
+        const defaultDate = new Date()
+        defaultDate.setHours(defaultDate.getHours() + 1)
+        onScheduledPublishAtChange(defaultDate.toISOString().slice(0, 16))
+      } else {
+        onScheduledPublishAtChange(null)
+      }
+    }
+  }
+  
+  const isScheduled = scheduledPublishAt !== null && scheduledPublishAt !== ''
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-level-2 border border-gray-700/50 p-6">
@@ -107,12 +126,50 @@ export function StoryPreview({
               type="checkbox"
               checked={publishAsDraft}
               onChange={(e) => onPublishAsDraftChange(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-brand-cyan focus:ring-brand-cyan focus:ring-2"
+              disabled={isScheduled}
+              className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-brand-cyan focus:ring-brand-cyan focus:ring-2 disabled:opacity-50"
             />
             <span className="text-sm text-gray-300">
               Save as draft (not published)
             </span>
           </label>
+        </div>
+      )}
+
+      {/* Schedule Publishing Toggle */}
+      {onScheduledPublishAtChange && (
+        <div className="mb-6 p-4 bg-gray-900/50 rounded-lg border border-gray-700/50">
+          <div className="flex items-center gap-3 mb-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isScheduled}
+                onChange={(e) => handleScheduleToggle(e.target.checked)}
+                disabled={!publishAsDraft}
+                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-brand-cyan focus:ring-brand-cyan focus:ring-2 disabled:opacity-50"
+              />
+              <span className="text-sm text-gray-300">
+                Schedule for later
+              </span>
+            </label>
+          </div>
+          {isScheduled && (
+            <div className="mt-3">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Publish Date & Time
+              </label>
+              <input
+                type="datetime-local"
+                value={scheduledPublishAt || ''}
+                onChange={(e) => onScheduledPublishAtChange(e.target.value || null)}
+                min={new Date().toISOString().slice(0, 16)}
+                className="w-full px-4 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-brand-cyan"
+              />
+              <p className="mt-2 text-xs text-gray-400">
+                Story will be automatically published at the selected time. Must be saved as draft.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

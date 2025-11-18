@@ -2,7 +2,7 @@
 
 ეს დოკუმენტაცია განსაზღვრავს Phase 5-ის features-ს, რომლებიც დაემატება MVP-ის შემდეგ.
 
-**Current Status**: Phase 1-5 ✅ MOSTLY COMPLETED  
+**Current Status**: Phase 1-5 ✅ COMPLETED  
 **Next Phase**: User Feedback & Iteration  
 **Last Updated**: 2025-01-15
 
@@ -46,11 +46,11 @@
 - [x] Edit story (title, description)
 - [x] Delete story
 - [x] Story draft system
-- [ ] Story scheduling (future publish)
+- [x] Story scheduling (future publish)
 
 **Priority**: 🟡 Medium  
 **Estimated Time**: 1-2 weeks  
-**Status**: ✅ **MOSTLY COMPLETED** (2025-01-15) - Edit/Delete and Draft system implemented, scheduling pending
+**Status**: ✅ **COMPLETED** (2025-01-15) - All story management features implemented including scheduling
 
 #### 1.3 Comment System Enhancements
 - [x] Comment replies (nested comments)
@@ -84,12 +84,12 @@
   - [x] Story commented
   - [x] Comment reply
   - [x] New story from followed user
-- [ ] Notification settings (optional - Phase 2+)
+- [x] Notification settings (user preferences)
 - [x] Notification bell icon
 
 **Priority**: 🟡 Medium  
 **Estimated Time**: 2-3 weeks  
-**Status**: ✅ **COMPLETED** (2025-01-15) - Core notification system implemented, settings pending (optional)
+**Status**: ✅ **COMPLETED** (2025-01-15) - Full notification system with user preferences implemented
 
 ---
 
@@ -266,7 +266,7 @@
 
 ---
 
-**Status**: ✅ **MOSTLY COMPLETED** (2025-01-15)
+**Status**: ✅ **COMPLETED** (2025-01-15) - All Phase 5 features implemented
 
 **Next Action**: 
 1. Gather user feedback on completed features

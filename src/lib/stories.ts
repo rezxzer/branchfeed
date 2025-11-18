@@ -126,6 +126,11 @@ export async function createStory(data: CreateStoryData): Promise<string> {
     }
 
     // 2. Create root story
+    // If scheduled_publish_at is set, status must be 'draft'
+    const finalStatus = data.scheduled_publish_at 
+      ? 'draft' 
+      : (data.status || 'published')
+    
     const { data: storyData, error: storyError } = await supabase
       .from('stories')
       .insert({
@@ -137,7 +142,8 @@ export async function createStory(data: CreateStoryData): Promise<string> {
         is_root: true,
         max_depth: 5, // Default max depth
         branches_count: data.nodes.length,
-        status: data.status || 'published', // Default to published if not specified
+        status: finalStatus,
+        scheduled_publish_at: data.scheduled_publish_at || null,
       })
       .select('id')
       .single()

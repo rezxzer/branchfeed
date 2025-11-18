@@ -6,6 +6,13 @@ export interface Profile {
   bio: string | null
   avatar_url: string | null
   language_preference: string
+  notification_preferences?: {
+    follow?: boolean
+    like?: boolean
+    comment?: boolean
+    reply?: boolean
+    story_new?: boolean
+  }
   created_at: string
   updated_at: string
 }
@@ -25,6 +32,7 @@ export interface Story {
   comments_count?: number
   branches_count?: number // count of branch nodes (for feed display) - deprecated, use paths_count
   status?: 'draft' | 'published' // story status: draft or published
+  scheduled_publish_at?: string | null // ISO timestamp for scheduled publishing
   created_at: string
   updated_at?: string
   userHasLiked?: boolean // whether the current user has liked this story (server-side only)

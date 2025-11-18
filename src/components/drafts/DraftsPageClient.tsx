@@ -159,32 +159,55 @@ export function DraftsPageClient() {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {stories.map((story) => (
-                <div key={story.id} className="relative">
-                  <StoryCard story={story} />
-                  <div className="absolute top-2 left-2 px-2 py-1 bg-yellow-600/80 backdrop-blur-sm rounded-lg text-xs font-semibold text-white z-10">
-                    Draft
+              {stories.map((story) => {
+                const isScheduled = story.scheduled_publish_at && new Date(story.scheduled_publish_at) > new Date()
+                const scheduledDate = story.scheduled_publish_at 
+                  ? new Date(story.scheduled_publish_at).toLocaleString()
+                  : null
+
+                return (
+                  <div key={story.id} className="relative">
+                    <StoryCard story={story} />
+                    <div className="absolute top-2 left-2 flex gap-2 z-10">
+                      <div className="px-2 py-1 bg-yellow-600/80 backdrop-blur-sm rounded-lg text-xs font-semibold text-white">
+                        Draft
+                      </div>
+                      {isScheduled && (
+                        <div className="px-2 py-1 bg-blue-600/80 backdrop-blur-sm rounded-lg text-xs font-semibold text-white">
+                          Scheduled
+                        </div>
+                      )}
+                    </div>
+                    {isScheduled && scheduledDate && (
+                      <div className="mt-2 mb-2 px-3 py-2 bg-blue-900/30 rounded-lg border border-blue-700/50">
+                        <p className="text-xs text-blue-300">
+                          Scheduled for: <span className="font-semibold">{scheduledDate}</span>
+                        </p>
+                      </div>
+                    )}
+                    <div className="mt-2 flex gap-2">
+                      {!isScheduled && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handlePublish(story.id)}
+                          className="flex-1"
+                        >
+                          Publish
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => router.push(`/story/${story.id}`)}
+                        className={isScheduled ? "flex-1" : "flex-1"}
+                      >
+                        Edit
+                      </Button>
+                    </div>
                   </div>
-                  <div className="mt-2 flex gap-2">
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handlePublish(story.id)}
-                      className="flex-1"
-                    >
-                      Publish
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => router.push(`/story/${story.id}`)}
-                      className="flex-1"
-                    >
-                      Edit
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {hasMore && (

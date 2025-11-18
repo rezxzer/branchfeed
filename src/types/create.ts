@@ -28,5 +28,6 @@ export interface CreateStoryData {
   root: RootStoryData
   nodes: BranchNodeData[]
   status?: 'draft' | 'published' // Story status: draft or published (default: published)
+  scheduled_publish_at?: string | null // ISO timestamp for scheduled publishing (null if not scheduled)
 }
 

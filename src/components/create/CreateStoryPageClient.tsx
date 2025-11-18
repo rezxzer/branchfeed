@@ -22,6 +22,7 @@ export function CreateStoryPageClient() {
   const [rootStory, setRootStory] = useState<RootStoryData | null>(null)
   const [branchNodes, setBranchNodes] = useState<BranchNodeData[]>([])
   const [publishAsDraft, setPublishAsDraft] = useState(false)
+  const [scheduledPublishAt, setScheduledPublishAt] = useState<string | null>(null)
 
   const { createStory, loading, error, uploadProgress } = useCreateStory()
 
@@ -47,18 +48,26 @@ export function CreateStoryPageClient() {
     if (!rootStory || branchNodes.length === 0) return
 
     try {
+      // Convert datetime-local format to ISO string if scheduled
+      let scheduledAt: string | null = null
+      if (scheduledPublishAt) {
+        const date = new Date(scheduledPublishAt)
+        scheduledAt = date.toISOString()
+      }
+
       const storyId = await createStory({
         root: rootStory,
         nodes: branchNodes,
         status: publishAsDraft ? 'draft' : 'published',
+        scheduled_publish_at: scheduledAt,
       })
 
       // Show success toast
-      showToast(
-        t('createStory.success.message') || 'Story created successfully!',
-        'success',
-        3000
-      )
+      const message = scheduledAt
+        ? `Story scheduled for ${new Date(scheduledAt).toLocaleString()}!`
+        : (t('createStory.success.message') || 'Story created successfully!')
+      
+      showToast(message, 'success', 3000)
 
       // Redirect to new story page after a short delay to show toast
       setTimeout(() => {
@@ -156,6 +165,8 @@ export function CreateStoryPageClient() {
             error={error}
             publishAsDraft={publishAsDraft}
             onPublishAsDraftChange={setPublishAsDraft}
+            scheduledPublishAt={scheduledPublishAt}
+            onScheduledPublishAtChange={setScheduledPublishAt}
           />
         )}
 

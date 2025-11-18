@@ -6,6 +6,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { ProfileSettings } from './ProfileSettings'
 import { LanguageSettings } from './LanguageSettings'
 import { SubscriptionSettings } from './SubscriptionSettings'
+import { NotificationSettings } from './NotificationSettings'
 import { Spinner } from '@/components/ui/Spinner'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { useProfile } from '@/hooks/useProfile'
@@ -14,7 +15,7 @@ interface SettingsPageClientProps {
   userId: string
 }
 
-type SettingsTab = 'profile' | 'language' | 'subscription'
+type SettingsTab = 'profile' | 'language' | 'notifications' | 'subscription'
 
 export function SettingsPageClient({ userId }: SettingsPageClientProps) {
   const { t } = useTranslation()
@@ -81,6 +82,16 @@ export function SettingsPageClient({ userId }: SettingsPageClientProps) {
               {t('settings.tabs.language')}
             </button>
             <button
+              onClick={() => setActiveTab('notifications')}
+              className={`px-4 py-2 font-medium transition-colors ease-smooth ${
+                activeTab === 'notifications'
+                  ? 'text-brand-cyan border-b-2 border-brand-cyan'
+                  : 'text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              Notifications
+            </button>
+            <button
               onClick={() => setActiveTab('subscription')}
               className={`px-4 py-2 font-medium transition-colors ease-smooth ${
                 activeTab === 'subscription'
@@ -103,6 +114,10 @@ export function SettingsPageClient({ userId }: SettingsPageClientProps) {
             currentLanguage={profile.language_preference}
             onUpdate={(lang) => updateProfile({ language_preference: lang })}
           />
+        )}
+
+        {activeTab === 'notifications' && (
+          <NotificationSettings profile={profile} onUpdate={updateProfile} />
         )}
 
         {activeTab === 'subscription' && (
