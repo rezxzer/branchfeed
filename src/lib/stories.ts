@@ -138,7 +138,7 @@ export async function createStory(data: CreateStoryData): Promise<string> {
         title: data.root.title,
         description: data.root.description || null,
         media_url: rootMediaUrl,
-        media_type: data.root.mediaType || (data.root.media ? (data.root.media.type.startsWith('image/') ? 'image' : 'video') : null),
+        media_type: data.root.mediaType || (data.root.media ? (data.root.media.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(data.root.media.name) ? 'video' : 'image') : null),
         is_root: true,
         max_depth: 5, // Default max depth
         branches_count: data.nodes.length,

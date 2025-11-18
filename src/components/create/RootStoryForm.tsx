@@ -69,6 +69,9 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
       return
     }
     
+    // Set media type immediately (synchronous) to ensure it's available when submitting
+    setMediaType(isVideo ? 'video' : 'image')
+    
     // Set media file - this will trigger preview in useEffect
     setMedia(file)
   }
