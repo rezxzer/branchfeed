@@ -67,11 +67,38 @@ export function MediaDisplay({
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const lastRetryRef = useRef<number>(0)
+  const videoRef = useRef<HTMLVideoElement>(null)
 
   useEffect(() => {
     setIsLoading(true)
     setHasError(false)
   }, [mediaUrl])
+
+  // Handle autoplay for videos
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || mediaType !== 'video') return
+
+    if (autoPlay) {
+      // Try to play video when autoplay is enabled
+      const playPromise = video.play()
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            // Autoplay started successfully
+            console.debug('Video autoplay started')
+          })
+          .catch((error) => {
+            // Autoplay was prevented (browser policy)
+            console.warn('Video autoplay failed:', error)
+            // Video will show play button - user can click to play
+          })
+      }
+    } else {
+      // Pause video when autoplay is disabled
+      video.pause()
+    }
+  }, [autoPlay, mediaType])
 
   const handleLoad = () => {
     setIsLoading(false)
@@ -139,6 +166,7 @@ export function MediaDisplay({
         </div>
       ) : (
         <video
+          ref={videoRef}
           src={mediaUrl}
           className="w-full h-full object-cover"
           controls={controls}

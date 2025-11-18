@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useAuth } from '@/hooks/useAuth'
 import { useBookmarks } from '@/hooks/useBookmarks'
+import { useInViewport } from '@/hooks/useInViewport'
 import { Card } from '@/components/ui/Card'
 import { MediaDisplay } from '@/components/MediaDisplay'
 import { ShareStoryButton } from '@/components/story/ShareStoryButton'
@@ -25,6 +26,12 @@ export function StoryCard({ story }: StoryCardProps) {
     story.id,
     story.isBookmarked || false
   )
+  
+  // Viewport detection for video autoplay
+  const { ref: viewportRef, isInViewport } = useInViewport({
+    threshold: 0.5, // 50% of video must be visible
+    rootMargin: '0px',
+  })
 
   const handleClick = () => {
     router.push(`/story/${story.id}`)
@@ -49,6 +56,7 @@ export function StoryCard({ story }: StoryCardProps) {
 
   return (
     <Card
+      ref={viewportRef}
       variant="default"
       hoverable
       clickable
@@ -69,6 +77,11 @@ export function StoryCard({ story }: StoryCardProps) {
             lazy={true}
             maxWidth="w-full"
             className="mb-0"
+            // Video autoplay settings for feed
+            autoPlay={story.media_type === 'video' ? isInViewport : false}
+            loop={story.media_type === 'video'}
+            muted={story.media_type === 'video'}
+            controls={true}
           />
         ) : (
           <div className="relative aspect-[9/16] w-full rounded-lg overflow-hidden bg-gray-700 flex items-center justify-center">
