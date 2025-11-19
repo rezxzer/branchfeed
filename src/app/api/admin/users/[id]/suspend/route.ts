@@ -24,8 +24,18 @@ export async function POST(
     const supabase = await createServerSupabaseClient();
     
     if (!supabase) {
+      // Check which variables are missing
+      const missingVars = []
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
+      if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+      
       return NextResponse.json(
-        { error: 'Service unavailable' },
+        { 
+          error: 'Service unavailable',
+          details: missingVars.length > 0 
+            ? `Missing environment variables: ${missingVars.join(', ')}. Please check your .env.local file and restart the dev server.`
+            : 'Supabase client initialization failed. Please check your .env.local file and restart the dev server.'
+        },
         { status: 503 }
       );
     }
@@ -93,8 +103,18 @@ export async function POST(
     // Use admin client to bypass RLS
     const adminClient = createAdminSupabaseClient();
     if (!adminClient) {
+      // Check which variables are missing
+      const missingVars = []
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
+      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missingVars.push('SUPABASE_SERVICE_ROLE_KEY')
+      
       return NextResponse.json(
-        { error: 'Service unavailable' },
+        { 
+          error: 'Service unavailable',
+          details: missingVars.length > 0 
+            ? `Missing admin environment variables: ${missingVars.join(', ')}. Please check your .env.local file and restart the dev server.`
+            : 'Admin Supabase client initialization failed. Please check your .env.local file and restart the dev server.'
+        },
         { status: 503 }
       );
     }
@@ -168,8 +188,18 @@ export async function DELETE(
     const supabase = await createServerSupabaseClient();
     
     if (!supabase) {
+      // Check which variables are missing
+      const missingVars = []
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
+      if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+      
       return NextResponse.json(
-        { error: 'Service unavailable' },
+        { 
+          error: 'Service unavailable',
+          details: missingVars.length > 0 
+            ? `Missing environment variables: ${missingVars.join(', ')}. Please check your .env.local file and restart the dev server.`
+            : 'Supabase client initialization failed. Please check your .env.local file and restart the dev server.'
+        },
         { status: 503 }
       );
     }
@@ -213,8 +243,18 @@ export async function DELETE(
     // Use admin client to bypass RLS
     const adminClient = createAdminSupabaseClient();
     if (!adminClient) {
+      // Check which variables are missing
+      const missingVars = []
+      if (!process.env.NEXT_PUBLIC_SUPABASE_URL) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
+      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missingVars.push('SUPABASE_SERVICE_ROLE_KEY')
+      
       return NextResponse.json(
-        { error: 'Service unavailable' },
+        { 
+          error: 'Service unavailable',
+          details: missingVars.length > 0 
+            ? `Missing admin environment variables: ${missingVars.join(', ')}. Please check your .env.local file and restart the dev server.`
+            : 'Admin Supabase client initialization failed. Please check your .env.local file and restart the dev server.'
+        },
         { status: 503 }
       );
     }

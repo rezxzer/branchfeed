@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -8,9 +8,11 @@ import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { SearchBar } from './SearchBar'
+import { LinkRenderer } from '@/components/ui/LinkRenderer'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { useTranslation } from '@/hooks/useTranslation'
+import { logError } from '@/lib/logger'
 import type { Story, Profile } from '@/types'
 
 interface SearchPageClientProps {
@@ -43,8 +45,10 @@ export function SearchPageClient({ query: initialQuery, type: initialType, sortB
   const [results, setResults] = useState<SearchResult | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [hasMore, setHasMore] = useState(true)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
-  const fetchResults = async () => {
+  const fetchResults = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     if (!query.trim()) {
       setLoading(false)
       return
@@ -58,7 +62,7 @@ export function SearchPageClient({ query: initialQuery, type: initialType, sortB
         q: query.trim(),
         type,
         sortBy,
-        page: page.toString(),
+        page: pageNum.toString(),
         limit: '20',
       })
 
@@ -69,19 +73,60 @@ export function SearchPageClient({ query: initialQuery, type: initialType, sortB
       }
 
       const data = await response.json()
-      setResults(data)
+      
+      if (append) {
+        // Append new results to existing ones
+        setResults((prevResults) => {
+          if (!prevResults) return data
+          return {
+            stories: [...prevResults.stories, ...(data.stories || [])],
+            users: [...prevResults.users, ...(data.users || [])],
+            pagination: data.pagination,
+          }
+        })
+      } else {
+        setResults(data)
+      }
+      
+      // Check if there are more results
+      setHasMore(pageNum < data.pagination.totalPages)
     } catch (err: any) {
-      console.error('Error fetching search results:', err)
+      logError('Error fetching search results', err)
       setError(err.message || 'Failed to load search results')
     } finally {
       setLoading(false)
     }
-  }
+  }, [query, type, sortBy])
 
+  // Initial fetch
   useEffect(() => {
-    fetchResults()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, type, sortBy, page])
+    fetchResults(1, false)
+    setPage(1)
+  }, [query, type, sortBy, fetchResults])
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    if (!sentinelRef.current || !hasMore || loading) return
+
+    const sentinel = sentinelRef.current
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          const nextPage = page + 1
+          setPage(nextPage)
+          fetchResults(nextPage, true)
+        }
+      },
+      { threshold: 0.1 }
+    )
+
+    observer.observe(sentinel)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [hasMore, loading, page, fetchResults])
 
   const handleSearch = (newQuery: string) => {
     setQuery(newQuery)
@@ -222,7 +267,10 @@ export function SearchPageClient({ query: initialQuery, type: initialType, sortB
                                 alt={story.title}
                                 fill
                                 className="object-cover"
-                                unoptimized
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                quality={85}
+                                loading="lazy"
+                                unoptimized={story.media_url.includes('supabase.co') && !story.media_url.includes('storage')}
                               />
                             </div>
                           )}
@@ -232,7 +280,7 @@ export function SearchPageClient({ query: initialQuery, type: initialType, sortB
                             </h3>
                             {story.description && (
                               <p className="text-sm text-gray-400 line-clamp-2 mb-2">
-                                {story.description}
+                                <LinkRenderer text={story.description} showExternalIcon={true} />
                               </p>
                             )}
                             <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -276,6 +324,7 @@ export function SearchPageClient({ query: initialQuery, type: initialType, sortB
                               width={48}
                               height={48}
                               className="rounded-full object-cover"
+                              style={{ width: 'auto', height: 'auto' }}
                               unoptimized
                             />
                           ) : (
@@ -316,28 +365,17 @@ export function SearchPageClient({ query: initialQuery, type: initialType, sortB
               />
             )}
 
-            {/* Pagination */}
-            {results.pagination.totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page - 1)}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                <span className="text-sm text-gray-400">
-                  Page {page} of {results.pagination.totalPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handlePageChange(page + 1)}
-                  disabled={page >= results.pagination.totalPages}
-                >
-                  Next
-                </Button>
+            {/* Infinite Scroll Sentinel */}
+            {hasMore && (
+              <div ref={sentinelRef} className="h-10 flex justify-center items-center py-4">
+                {loading && <Spinner size="md" />}
+              </div>
+            )}
+            
+            {/* End of Results */}
+            {!hasMore && results.pagination.total > 0 && (
+              <div className="text-center text-gray-400 text-sm py-4">
+                {t('search.endOfResults') || 'End of results'}
               </div>
             )}
           </>

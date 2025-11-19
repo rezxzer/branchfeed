@@ -59,8 +59,17 @@ export async function uploadMedia(
     }
     
     // Friendly error message for upload failures
-    if (error.message?.includes('File size') || error.message?.includes('size')) {
-      throw new Error('File is too large. Please upload a file smaller than 10MB.')
+    if (error.message?.includes('File size') || error.message?.includes('size') || error.message?.includes('exceeded the maximum allowed size')) {
+      throw new Error(
+        `File is too large. The Supabase Storage bucket has a maximum file size limit.\n\n` +
+        `Please either:\n` +
+        `1. Upload a smaller file (< 50MB for videos, < 10MB for images), or\n` +
+        `2. Increase the bucket's file size limit in Supabase Dashboard:\n` +
+        `   - Go to Supabase Dashboard → Storage → ${bucket} bucket\n` +
+        `   - Click "Settings" or "Edit bucket"\n` +
+        `   - Increase "File size limit" to 50MB (or more)\n` +
+        `   - Save changes`
+      )
     }
     
     if (error.message?.includes('permission') || error.message?.includes('unauthorized')) {
@@ -119,17 +128,62 @@ export async function createStory(data: CreateStoryData): Promise<string> {
   try {
     // 1. Upload root story media
     let rootMediaUrl: string | null = null
+    let rootMediaType: 'image' | 'video' | null = null
+    
+    console.log('📤 Creating story with data:', {
+      hasMedia: !!data.root.media,
+      mediaType: data.root.mediaType,
+      mediaName: data.root.media?.name,
+      mediaFileType: data.root.media?.type,
+    })
+    
     if (data.root.media) {
+      console.log('📤 Uploading root media:', data.root.media.name, data.root.media.type)
       rootMediaUrl = await uploadMedia(data.root.media, 'stories', 'root')
+      console.log('✅ Root media uploaded:', rootMediaUrl)
+      
+      // Determine media type from file
+      if (data.root.mediaType) {
+        rootMediaType = data.root.mediaType
+        console.log('📹 Using provided mediaType:', rootMediaType)
+      } else if (data.root.media.type) {
+        rootMediaType = data.root.media.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(data.root.media.name) ? 'video' : 'image'
+        console.log('📹 Detected mediaType from file.type:', rootMediaType, 'file.type:', data.root.media.type)
+      } else if (data.root.media.name) {
+        rootMediaType = /\.(mp4|webm|mov|avi|mkv)$/i.test(data.root.media.name) ? 'video' : 'image'
+        console.log('📹 Detected mediaType from file.name:', rootMediaType, 'file.name:', data.root.media.name)
+      }
     } else if (data.root.mediaUrl) {
       rootMediaUrl = data.root.mediaUrl
+      console.log('📤 Using existing mediaUrl:', rootMediaUrl)
+      // Try to determine media type from URL extension if mediaType not provided
+      if (data.root.mediaType) {
+        rootMediaType = data.root.mediaType
+        console.log('📹 Using provided mediaType:', rootMediaType)
+      } else if (rootMediaUrl) {
+        rootMediaType = /\.(mp4|webm|mov|avi|mkv)$/i.test(rootMediaUrl) ? 'video' : 'image'
+        console.log('📹 Detected mediaType from URL:', rootMediaType, 'URL:', rootMediaUrl)
+      }
     }
+    
+    console.log('📊 Final root media:', {
+      url: rootMediaUrl,
+      type: rootMediaType,
+    })
 
     // 2. Create root story
     // If scheduled_publish_at is set, status must be 'draft'
     const finalStatus = data.scheduled_publish_at 
       ? 'draft' 
       : (data.status || 'published')
+    
+    console.log('💾 Inserting story into database:', {
+      title: data.root.title,
+      media_url: rootMediaUrl,
+      media_type: rootMediaType,
+      branches_count: data.nodes.length,
+      status: finalStatus,
+    })
     
     const { data: storyData, error: storyError } = await supabase
       .from('stories')
@@ -138,7 +192,7 @@ export async function createStory(data: CreateStoryData): Promise<string> {
         title: data.root.title,
         description: data.root.description || null,
         media_url: rootMediaUrl,
-        media_type: data.root.mediaType || (data.root.media ? (data.root.media.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(data.root.media.name) ? 'video' : 'image') : null),
+        media_type: rootMediaType,
         is_root: true,
         max_depth: 5, // Default max depth
         branches_count: data.nodes.length,
@@ -149,9 +203,11 @@ export async function createStory(data: CreateStoryData): Promise<string> {
       .single()
 
     if (storyError) {
-      console.error('Error creating story:', storyError)
+      console.error('❌ Error creating story:', storyError)
       throw new Error(`Failed to create story: ${storyError.message}`)
     }
+    
+    console.log('✅ Story created successfully:', storyData.id, 'with media_type:', rootMediaType)
 
     const storyId = storyData.id
 
@@ -162,26 +218,58 @@ export async function createStory(data: CreateStoryData): Promise<string> {
       for (const node of data.nodes) {
         // Upload media for choice A
         let choiceAMediaUrl: string | null = null
+        let choiceAMediaType: 'image' | 'video' | null = null
+        
         if (node.choiceA.media) {
           choiceAMediaUrl = await uploadMedia(
             node.choiceA.media,
             'stories',
             `nodes/${storyId}`
           )
+          // Determine media type from file
+          if (node.choiceA.mediaType) {
+            choiceAMediaType = node.choiceA.mediaType
+          } else if (node.choiceA.media.type) {
+            choiceAMediaType = node.choiceA.media.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(node.choiceA.media.name) ? 'video' : 'image'
+          } else if (node.choiceA.media.name) {
+            choiceAMediaType = /\.(mp4|webm|mov|avi|mkv)$/i.test(node.choiceA.media.name) ? 'video' : 'image'
+          }
         } else if (node.choiceA.mediaUrl) {
           choiceAMediaUrl = node.choiceA.mediaUrl
+          // Try to determine media type from URL extension if mediaType not provided
+          if (node.choiceA.mediaType) {
+            choiceAMediaType = node.choiceA.mediaType
+          } else if (choiceAMediaUrl) {
+            choiceAMediaType = /\.(mp4|webm|mov|avi|mkv)$/i.test(choiceAMediaUrl) ? 'video' : 'image'
+          }
         }
 
         // Upload media for choice B
         let choiceBMediaUrl: string | null = null
+        let choiceBMediaType: 'image' | 'video' | null = null
+        
         if (node.choiceB.media) {
           choiceBMediaUrl = await uploadMedia(
             node.choiceB.media,
             'stories',
             `nodes/${storyId}`
           )
+          // Determine media type from file
+          if (node.choiceB.mediaType) {
+            choiceBMediaType = node.choiceB.mediaType
+          } else if (node.choiceB.media.type) {
+            choiceBMediaType = node.choiceB.media.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(node.choiceB.media.name) ? 'video' : 'image'
+          } else if (node.choiceB.media.name) {
+            choiceBMediaType = /\.(mp4|webm|mov|avi|mkv)$/i.test(node.choiceB.media.name) ? 'video' : 'image'
+          }
         } else if (node.choiceB.mediaUrl) {
           choiceBMediaUrl = node.choiceB.mediaUrl
+          // Try to determine media type from URL extension if mediaType not provided
+          if (node.choiceB.mediaType) {
+            choiceBMediaType = node.choiceB.mediaType
+          } else if (choiceBMediaUrl) {
+            choiceBMediaType = /\.(mp4|webm|mov|avi|mkv)$/i.test(choiceBMediaUrl) ? 'video' : 'image'
+          }
         }
 
         // Create node for choice A
@@ -191,7 +279,7 @@ export async function createStory(data: CreateStoryData): Promise<string> {
           choice_label: 'A',
           content: node.choiceA.content || null,
           media_url: choiceAMediaUrl,
-          media_type: node.choiceA.mediaType || (node.choiceA.media ? (node.choiceA.media.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(node.choiceA.media.name) ? 'video' : 'image') : null),
+          media_type: choiceAMediaType,
           depth: node.depth,
           choice_a_label: node.choiceA.label || 'A',
           choice_a_content: node.choiceA.content || null,
@@ -206,7 +294,7 @@ export async function createStory(data: CreateStoryData): Promise<string> {
           choice_label: 'B',
           content: node.choiceB.content || null,
           media_url: choiceBMediaUrl,
-          media_type: node.choiceB.mediaType || (node.choiceB.media ? (node.choiceB.media.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(node.choiceB.media.name) ? 'video' : 'image') : null),
+          media_type: choiceBMediaType,
           depth: node.depth,
           choice_a_label: node.choiceA.label || 'A',
           choice_a_content: node.choiceA.content || null,
@@ -321,7 +409,14 @@ export async function getRootStoriesClient(
   limit: number = 20,
   offset: number = 0,
   sortBy: 'recent' | 'popular' | 'trending' = 'recent',
-  tagId?: string
+  tagId?: string,
+  authorId?: string,
+  dateRange?: {
+    type: 'all' | '24h' | '7d' | '30d' | 'custom'
+    startDate?: string
+    endDate?: string
+  },
+  tagIds?: string[]
 ): Promise<Story[]> {
   const supabase = createClientClient()
 
@@ -368,6 +463,47 @@ export async function getRootStoriesClient(
     `
     )
     .eq('is_root', true)
+    .eq('status', 'published') // Only show published stories
+
+  // Filter by author if specified
+  if (authorId) {
+    query = query.eq('author_id', authorId)
+  }
+
+  // Filter by date range if specified
+  if (dateRange && dateRange.type !== 'all') {
+    const now = new Date()
+    let startDate: Date | null = null
+
+    if (dateRange.type === '24h') {
+      startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    } else if (dateRange.type === '7d') {
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    } else if (dateRange.type === '30d') {
+      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+    } else if (dateRange.type === 'custom') {
+      if (dateRange.startDate) {
+        startDate = new Date(dateRange.startDate)
+      }
+      if (dateRange.endDate) {
+        const endDate = new Date(dateRange.endDate)
+        endDate.setHours(23, 59, 59, 999) // End of day
+        query = query.lte('created_at', endDate.toISOString())
+      }
+    }
+
+    if (startDate) {
+      query = query.gte('created_at', startDate.toISOString())
+    }
+  }
+
+  // Filter by tags if specified
+  if (tagIds && tagIds.length > 0) {
+    // Note: Supabase PostgREST doesn't support direct filtering on nested relations
+    // We'll filter after fetching
+  } else if (tagId) {
+    // Legacy single tag filter - also filter after fetching
+  }
 
   const { data, error } = await query
     .order(orderBy, { ascending })
@@ -401,6 +537,7 @@ export async function getRootStoriesClient(
 
   // Get user's bookmarked stories if authenticated
   let userBookmarkedStories: Set<string> = new Set()
+  let userProgressStories: Set<string> = new Set()
   if (user) {
     const { data: userBookmarks } = await supabase
       .from('bookmarks')
@@ -409,6 +546,16 @@ export async function getRootStoriesClient(
     
     if (userBookmarks) {
       userBookmarkedStories = new Set(userBookmarks.map((bookmark: { story_id: string }) => bookmark.story_id))
+    }
+
+    // Get user's progress for stories
+    const { data: userProgress } = await supabase
+      .from('user_story_progress')
+      .select('story_id')
+      .eq('user_id', user.id)
+    
+    if (userProgress) {
+      userProgressStories = new Set(userProgress.map((progress: { story_id: string }) => progress.story_id))
     }
   }
 
@@ -427,6 +574,7 @@ export async function getRootStoriesClient(
             ...story,
             branches_count: 0,
             isBookmarked: user ? userBookmarkedStories.has(story.id) : false,
+            userHasProgress: user ? userProgressStories.has(story.id) : false,
           } as Story
         }
 
@@ -437,6 +585,7 @@ export async function getRootStoriesClient(
           ...story,
           branches_count: count || 0,
           isBookmarked: user ? userBookmarkedStories.has(story.id) : false,
+          userHasProgress: user ? userProgressStories.has(story.id) : false,
           tags,
         } as Story
       } catch (err) {
@@ -446,6 +595,7 @@ export async function getRootStoriesClient(
           ...story,
           branches_count: 0,
           isBookmarked: user ? userBookmarkedStories.has(story.id) : false,
+          userHasProgress: user ? userProgressStories.has(story.id) : false,
         } as Story
       }
     })

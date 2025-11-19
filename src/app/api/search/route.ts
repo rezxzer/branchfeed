@@ -71,6 +71,8 @@ export async function GET(request: NextRequest) {
 
     // Search stories
     if (type === 'all' || type === 'stories') {
+      // Search stories by title, description, and tags
+      // First, get stories matching title/description
       let storiesQuery = supabase
         .from('stories')
         .select(
@@ -80,6 +82,13 @@ export async function GET(request: NextRequest) {
             id,
             username,
             avatar_url
+          ),
+          story_tags(
+            tag:tags(
+              id,
+              name,
+              slug
+            )
           )
         `,
           { count: 'exact' }
@@ -104,11 +113,104 @@ export async function GET(request: NextRequest) {
       if (storiesError) {
         console.error('Error searching stories:', storiesError)
       } else {
-        results.stories = (storiesData || []).map((story: any) => ({
-          ...story,
-          type: 'story',
-        }))
-        totalStories = storiesCount || 0
+        let stories = storiesData || []
+        
+        // Also search by tags if query matches tag names
+        const { data: matchingTags } = await supabase
+          .from('tags')
+          .select('id')
+          .ilike('name', searchQuery)
+        
+        if (matchingTags && matchingTags.length > 0) {
+          const tagIds = matchingTags.map((t: any) => t.id)
+          
+          // Get story IDs that have matching tags
+          const { data: storyTagsData } = await supabase
+            .from('story_tags')
+            .select('story_id')
+            .in('tag_id', tagIds)
+          
+          if (storyTagsData && storyTagsData.length > 0) {
+            const storyIds = [...new Set(storyTagsData.map((st: any) => st.story_id))]
+            
+            // Fetch stories by tag IDs
+            const { data: storiesByTags } = await supabase
+              .from('stories')
+              .select(
+                `
+                *,
+                author:profiles(
+                  id,
+                  username,
+                  avatar_url
+                ),
+                story_tags(
+                  tag:tags(
+                    id,
+                    name,
+                    slug
+                  )
+                )
+              `
+              )
+              .eq('is_root', true)
+              .in('id', storyIds)
+            
+            if (storiesByTags) {
+              // Merge and deduplicate stories
+              const existingIds = new Set(stories.map((s: any) => s.id))
+              const newStories = storiesByTags.filter((s: any) => !existingIds.has(s.id))
+              stories = [...stories, ...newStories]
+            }
+          }
+        }
+        
+        // Extract tags and calculate relevance score
+        results.stories = stories.map((story: any) => {
+          const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+          
+          // Calculate relevance score
+          const queryLower = query.trim().toLowerCase()
+          let relevanceScore = 0
+          
+          // Title match (highest weight)
+          if (story.title?.toLowerCase().includes(queryLower)) {
+            relevanceScore += 10
+            if (story.title?.toLowerCase().startsWith(queryLower)) {
+              relevanceScore += 5 // Bonus for starting with query
+            }
+          }
+          
+          // Description match
+          if (story.description?.toLowerCase().includes(queryLower)) {
+            relevanceScore += 5
+          }
+          
+          // Tag match
+          const matchingTags = tags.filter((tag: any) => 
+            tag.name?.toLowerCase().includes(queryLower)
+          )
+          relevanceScore += matchingTags.length * 3
+          
+          return {
+            ...story,
+            tags,
+            type: 'story',
+            relevanceScore,
+          }
+        })
+        
+        // Sort by relevance if sortBy is 'relevance'
+        if (sortBy === 'relevance') {
+          results.stories.sort((a: any, b: any) => b.relevanceScore - a.relevanceScore)
+        }
+        
+        // Apply pagination after sorting
+        const startIndex = offset
+        const endIndex = offset + limit
+        results.stories = results.stories.slice(startIndex, endIndex)
+        
+        totalStories = storiesCount || results.stories.length
       }
     }
 

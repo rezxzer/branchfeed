@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/Button'
 import { Textarea } from '@/components/ui/Textarea'
 import { ReportButton } from '@/components/report/ReportButton'
+import { LinkRenderer } from '@/components/ui/LinkRenderer'
 import type { Comment as CommentType } from '@/lib/comments'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -199,7 +200,7 @@ export function Comment({
             </div>
           ) : (
             <p className="text-gray-300 text-sm whitespace-pre-wrap break-words">
-              {comment.content}
+              <LinkRenderer text={comment.content} showExternalIcon={true} />
             </p>
           )}
 

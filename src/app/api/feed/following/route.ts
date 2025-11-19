@@ -118,22 +118,46 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Extract tags from nested structure for each story
-    const storiesWithTags = filteredStories.map((story: any) => {
-      const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
-      return {
-        ...story,
-        tags,
-      }
-    })
+    // Get user's bookmarked stories if authenticated
+    let userBookmarkedStories: Set<string> = new Set()
+    const { data: userBookmarks } = await supabase
+      .from('bookmarks')
+      .select('story_id')
+      .eq('user_id', user.id)
+    
+    if (userBookmarks) {
+      userBookmarkedStories = new Set(userBookmarks.map((bookmark: { story_id: string }) => bookmark.story_id))
+    }
+
+    // Count branches for each story and extract tags
+    const storiesWithData = await Promise.all(
+      filteredStories.map(async (story: any) => {
+        // Count branches
+        const { count: branchesCount } = await supabase
+          .from('story_nodes')
+          .select('*', { count: 'exact', head: true })
+          .eq('story_id', story.id)
+
+        // Extract tags from nested structure
+        const tags = story.story_tags?.map((st: any) => st.tag).filter(Boolean) || []
+
+        return {
+          ...story,
+          branches_count: branchesCount || 0,
+          tags,
+          isBookmarked: userBookmarkedStories.has(story.id),
+          userHasProgress: false, // Could be enhanced later
+        }
+      })
+    )
 
     return NextResponse.json({
-      stories: storiesWithTags,
+      stories: storiesWithData,
       pagination: {
         page,
         limit,
-        total: filteredStories.length,
-        totalPages: Math.ceil(filteredStories.length / limit),
+        total: count || filteredStories.length,
+        totalPages: Math.ceil((count || filteredStories.length) / limit),
       },
     })
   } catch (error: any) {

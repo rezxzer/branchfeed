@@ -31,11 +31,11 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           className={cn(
             'w-full px-4 py-2 border rounded-lg transition-colors ease-smooth',
             'focus:outline-none focus:ring-2 focus:ring-brand-iris focus:border-transparent',
-            'bg-gray-800/50 border-gray-700 text-white placeholder-gray-400',
+            'bg-gray-900/80 border-gray-600/50 text-gray-100 placeholder-gray-400',
             error
               ? 'border-error bg-error/10'
-              : 'hover:border-gray-600',
-            props.disabled && 'bg-gray-900 cursor-not-allowed opacity-60',
+              : 'hover:border-gray-500',
+            props.disabled && 'bg-gray-900/50 cursor-not-allowed opacity-60',
             className
           )}
           {...props}

@@ -91,8 +91,70 @@ export function NotificationSettings({
     story_new: 'New stories from followed users',
   }
 
+  // Video autoplay preference
+  const videoAutoplayEnabled = profile.video_preferences?.autoplay_enabled !== false // Default to true
+
+  const handleVideoAutoplayToggle = () => {
+    const newVideoPreferences = {
+      autoplay_enabled: !videoAutoplayEnabled,
+    }
+    setPreferences((prev) => ({
+      ...prev,
+      // Store in notification_preferences for now (can be moved to separate field later)
+    }))
+    // Update profile directly
+    onUpdate({
+      video_preferences: newVideoPreferences,
+    }).catch((err) => {
+      console.error('Error updating video preferences:', err)
+      showToast('Failed to update video preferences. Please try again.', 'error')
+    })
+  }
+
   return (
     <div className="space-y-6">
+      {/* Video Autoplay Preference */}
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-level-2 border border-gray-700/50 p-6">
+        <h2 className="text-xl font-semibold text-white mb-6">
+          {t('settings.video.title') || 'Video Preferences'}
+        </h2>
+
+        <p className="text-gray-400 mb-6 text-sm">
+          {t('settings.video.description') || 'Control video autoplay behavior in your feed.'}
+        </p>
+
+        <div className="p-4 bg-gray-900/50 rounded-lg border border-gray-700/50">
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <h3 className="text-white font-medium mb-1">
+                {t('settings.video.autoplay.label') || 'Enable video autoplay'}
+              </h3>
+              <p className="text-gray-400 text-sm">
+                {t('settings.video.autoplay.description') || 'Videos in your feed will automatically play when they come into view. You can still pause them manually.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleVideoAutoplayToggle}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ease-smooth ${
+                videoAutoplayEnabled
+                  ? 'bg-brand-cyan'
+                  : 'bg-gray-600'
+              }`}
+              role="switch"
+              aria-checked={videoAutoplayEnabled}
+              aria-label={t('settings.video.autoplay.label') || 'Toggle video autoplay'}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ease-smooth ${
+                  videoAutoplayEnabled ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl shadow-level-2 border border-gray-700/50 p-6">
         <h2 className="text-xl font-semibold text-white mb-6">
           Notification Preferences

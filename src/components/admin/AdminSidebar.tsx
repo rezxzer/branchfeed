@@ -8,17 +8,21 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-
-const menuItems = [
-  { id: 'overview', label: 'Overview', path: '/admin', icon: '📊' },
-  { id: 'users', label: 'Users', path: '/admin/users', icon: '👥' },
-  { id: 'moderation', label: 'Moderation', path: '/admin/moderation', icon: '🛡️' },
-  { id: 'analytics', label: 'Analytics', path: '/admin/analytics', icon: '📈' },
-  { id: 'settings', label: 'Settings', path: '/admin/settings', icon: '⚙️' },
-];
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { t } = useTranslation();
+
+  const menuItems = [
+    { id: 'overview', label: t('admin.sidebar.overview'), path: '/admin', icon: '📊' },
+    { id: 'users', label: t('admin.sidebar.users'), path: '/admin/users', icon: '👥' },
+    { id: 'moderation', label: t('admin.sidebar.moderation'), path: '/admin/moderation', icon: '🛡️' },
+    { id: 'feedback', label: t('admin.sidebar.feedback') || 'Feedback', path: '/admin/feedback', icon: '💬' },
+      { id: 'analytics', label: t('admin.sidebar.analytics'), path: '/admin/analytics', icon: '📈' },
+      { id: 'monitoring', label: t('admin.sidebar.monitoring') || 'Monitoring', path: '/admin/monitoring', icon: '📊' },
+    { id: 'settings', label: t('admin.sidebar.settings'), path: '/admin/settings', icon: '⚙️' },
+  ];
 
   return (
     <aside className="w-64 bg-gray-800/80 backdrop-blur-lg border-r border-gray-700/50 min-h-screen">

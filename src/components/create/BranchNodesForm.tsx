@@ -70,7 +70,7 @@ export function BranchNodesForm({
     if (!file) return
 
     // Basic validation
-    // Increased max size for videos (50MB for videos, 10MB for images)
+    // Max size for videos (50MB for videos, 10MB for images)
     const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
     const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024 // 50MB for videos, 10MB for images
     
@@ -147,7 +147,7 @@ export function BranchNodesForm({
         }
       })
     }
-  }, [])
+  }, [nodes])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -228,33 +228,54 @@ export function BranchNodesForm({
                   <div className="mb-3">
                     <input
                       type="file"
-                      accept="image/*,video/*,.mp4,.webm,.mov,.avi,.mkv"
+                      accept="image/*"
                       onChange={(e) => handleFileChange(node.id, 'choiceA', e)}
                       className="hidden"
-                      id={`media-a-${node.id}`}
+                      id={`media-a-image-${node.id}`}
                     />
-                    <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => handleFileChange(node.id, 'choiceA', e)}
+                      className="hidden"
+                      id={`media-a-video-${node.id}`}
+                    />
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <label
-                        htmlFor={`media-a-${node.id}`}
-                        className="cursor-pointer inline-block px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors ease-smooth"
+                        htmlFor={`media-a-image-${node.id}`}
+                        className="cursor-pointer inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors ease-smooth flex-1"
                       >
-                        {node.choiceA.media ? '📎 Change Media' : '📎 Add Media'}
+                        <span className="text-sm">🖼️</span>
+                        <span className="text-xs font-medium">
+                          {node.choiceA.media && node.choiceA.mediaType === 'image' ? 'Change Image' : 'Add Image'}
+                        </span>
                       </label>
-                      {node.choiceA.media && (
-                        <>
-                          <span className="text-xs text-gray-400">{node.choiceA.media.name}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveMedia(node.id, 'choiceA')}
-                            className="text-xs text-error hover:text-error"
-                          >
-                            ✕ Remove
-                          </Button>
-                        </>
-                      )}
+                      <label
+                        htmlFor={`media-a-video-${node.id}`}
+                        className="cursor-pointer inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors ease-smooth flex-1"
+                      >
+                        <span className="text-sm">📹</span>
+                        <span className="text-xs font-medium">
+                          {node.choiceA.media && node.choiceA.mediaType === 'video' ? 'Change Video' : 'Add Video'}
+                        </span>
+                      </label>
                     </div>
+                    {node.choiceA.media && (
+                      <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-gray-900/50 rounded-lg border border-gray-700/50">
+                        <span className="text-xs text-gray-300">
+                          {node.choiceA.mediaType === 'video' ? '📹' : '🖼️'} {node.choiceA.media.name}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveMedia(node.id, 'choiceA')}
+                          className="ml-auto text-xs text-error hover:text-error px-2 py-1"
+                        >
+                          ✕ Remove
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Media Preview for Choice A */}
@@ -302,33 +323,54 @@ export function BranchNodesForm({
                   <div className="mb-3">
                     <input
                       type="file"
-                      accept="image/*,video/*,.mp4,.webm,.mov,.avi,.mkv"
+                      accept="image/*"
                       onChange={(e) => handleFileChange(node.id, 'choiceB', e)}
                       className="hidden"
-                      id={`media-b-${node.id}`}
+                      id={`media-b-image-${node.id}`}
                     />
-                    <div className="flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => handleFileChange(node.id, 'choiceB', e)}
+                      className="hidden"
+                      id={`media-b-video-${node.id}`}
+                    />
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <label
-                        htmlFor={`media-b-${node.id}`}
-                        className="cursor-pointer inline-block px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors ease-smooth"
+                        htmlFor={`media-b-image-${node.id}`}
+                        className="cursor-pointer inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors ease-smooth flex-1"
                       >
-                        {node.choiceB.media ? '📎 Change Media' : '📎 Add Media'}
+                        <span className="text-sm">🖼️</span>
+                        <span className="text-xs font-medium">
+                          {node.choiceB.media && node.choiceB.mediaType === 'image' ? 'Change Image' : 'Add Image'}
+                        </span>
                       </label>
-                      {node.choiceB.media && (
-                        <>
-                          <span className="text-xs text-gray-400">{node.choiceB.media.name}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveMedia(node.id, 'choiceB')}
-                            className="text-xs text-error hover:text-error"
-                          >
-                            ✕ Remove
-                          </Button>
-                        </>
-                      )}
+                      <label
+                        htmlFor={`media-b-video-${node.id}`}
+                        className="cursor-pointer inline-flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors ease-smooth flex-1"
+                      >
+                        <span className="text-sm">📹</span>
+                        <span className="text-xs font-medium">
+                          {node.choiceB.media && node.choiceB.mediaType === 'video' ? 'Change Video' : 'Add Video'}
+                        </span>
+                      </label>
                     </div>
+                    {node.choiceB.media && (
+                      <div className="mt-2 flex items-center gap-2 px-3 py-2 bg-gray-900/50 rounded-lg border border-gray-700/50">
+                        <span className="text-xs text-gray-300">
+                          {node.choiceB.mediaType === 'video' ? '📹' : '🖼️'} {node.choiceB.media.name}
+                        </span>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveMedia(node.id, 'choiceB')}
+                          className="ml-auto text-xs text-error hover:text-error px-2 py-1"
+                        >
+                          ✕ Remove
+                        </Button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Media Preview for Choice B */}

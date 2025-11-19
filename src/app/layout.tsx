@@ -1,10 +1,13 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
 import { ToastProvider } from '@/components/ui/toast'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { VideoAutoplayProvider } from '@/contexts/VideoAutoplayContext'
+import { ThemeProvider } from '@/contexts/ThemeContext'
+import { QueryProvider } from '@/providers/QueryProvider'
+import { KeyboardShortcutsProvider } from '@/providers/KeyboardShortcutsProvider'
 import { siteConfig } from '@/config/site'
 
 export const dynamic = 'force-dynamic'
@@ -52,6 +55,13 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  other: {
+    'preload-image': siteConfig.ogImage,
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#0b1220',
 }
 
 export default function RootLayout({
@@ -60,20 +70,26 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-slate-950 text-slate-50">
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-slate-950 text-slate-50 dark:bg-slate-950 dark:text-slate-50 light:bg-white light:text-slate-900">
         <ErrorBoundary>
-          <ToastProvider>
-            <VideoAutoplayProvider>
-              <div className="flex min-h-screen flex-col">
-                <Header />
-                <main className="flex-1">
-                  {children}
-                </main>
-                <Footer />
-              </div>
-            </VideoAutoplayProvider>
-          </ToastProvider>
+          <ThemeProvider>
+            <QueryProvider>
+              <KeyboardShortcutsProvider>
+                <ToastProvider>
+                  <VideoAutoplayProvider>
+                    <div className="flex min-h-screen flex-col">
+                      <Header />
+                      <main className="flex-1">
+                        {children}
+                      </main>
+                      <Footer />
+                    </div>
+                  </VideoAutoplayProvider>
+                </ToastProvider>
+              </KeyboardShortcutsProvider>
+            </QueryProvider>
+          </ThemeProvider>
         </ErrorBoundary>
       </body>
     </html>

@@ -9,6 +9,7 @@ import { useProfile } from '@/hooks/useProfile'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useAdmin } from '@/hooks/useAdmin'
 import { LanguageSwitcher } from './LanguageSwitcher'
+import { ThemeToggle } from './ui/ThemeToggle'
 import { Button } from './ui/Button'
 import { SearchBar } from './search/SearchBar'
 import { NotificationBell } from './notifications/NotificationBell'
@@ -148,8 +149,11 @@ export function Header() {
             )}
           </nav>
 
-          {/* Right side: Language Switcher, Auth Buttons */}
+          {/* Right side: Theme Toggle, Language Switcher, Auth Buttons */}
           <div className="flex items-center space-x-4">
+            {/* Theme Toggle */}
+            <ThemeToggle variant="icon" size="md" />
+            
             {/* Language Switcher */}
             <LanguageSwitcher />
 
@@ -204,6 +208,7 @@ export function Header() {
                             width={32}
                             height={32}
                             className="w-full h-full object-cover"
+                            style={{ width: 'auto', height: 'auto' }}
                             unoptimized
                           />
                         </div>
@@ -255,6 +260,15 @@ export function Header() {
                             aria-label="Open settings"
                           >
                             {t('header.settings')}
+                          </Link>
+                          <Link
+                            href="/feedback"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 transition-colors ease-smooth"
+                            role="menuitem"
+                            aria-label="Submit feedback"
+                          >
+                            💬 {t('header.feedback') || 'Feedback'}
                           </Link>
                           {isAdmin && (
                             <Link

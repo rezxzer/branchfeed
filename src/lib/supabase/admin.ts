@@ -26,8 +26,14 @@ export function createAdminSupabaseClient() {
   const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
+    const missingVars = []
+    if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
+    if (!supabaseServiceRoleKey) missingVars.push('SUPABASE_SERVICE_ROLE_KEY')
+    
     console.warn(
-      'Missing Supabase admin environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in your .env file.'
+      `Missing Supabase admin environment variables in .env.local: ${missingVars.join(', ')}. ` +
+      'Please set these variables in your .env.local file. ' +
+      'Note: SUPABASE_SERVICE_ROLE_KEY is required for admin operations (ban, suspend, etc.).'
     )
     return null
   }

@@ -48,10 +48,18 @@ export function BanSuspendModal({
           body: JSON.stringify({ reason: reason.trim() || null }),
         });
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          showToast('Failed to ban user: Invalid response from server', 'error');
+          return;
+        }
 
         if (!response.ok) {
-          showToast(data.error || 'Failed to ban user', 'error');
+          const errorMessage = data?.details || data?.error || `Failed to ban user (${response.status})`;
+          showToast(errorMessage, 'error');
           return;
         }
 
@@ -74,10 +82,18 @@ export function BanSuspendModal({
           }),
         });
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          showToast('Failed to suspend user: Invalid response from server', 'error');
+          return;
+        }
 
         if (!response.ok) {
-          showToast(data.error || 'Failed to suspend user', 'error');
+          const errorMessage = data?.details || data?.error || `Failed to suspend user (${response.status})`;
+          showToast(errorMessage, 'error');
           return;
         }
 
@@ -91,10 +107,18 @@ export function BanSuspendModal({
           method: 'DELETE',
         });
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          showToast('Failed to unban user: Invalid response from server', 'error');
+          return;
+        }
 
         if (!response.ok) {
-          showToast(data.error || 'Failed to unban user', 'error');
+          const errorMessage = data?.details || data?.error || `Failed to unban user (${response.status})`;
+          showToast(errorMessage, 'error');
           return;
         }
 
@@ -106,10 +130,18 @@ export function BanSuspendModal({
           method: 'DELETE',
         });
 
-        const data = await response.json();
+        let data;
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('Error parsing response:', parseError);
+          showToast('Failed to unsuspend user: Invalid response from server', 'error');
+          return;
+        }
 
         if (!response.ok) {
-          showToast(data.error || 'Failed to unsuspend user', 'error');
+          const errorMessage = data?.details || data?.error || `Failed to unsuspend user (${response.status})`;
+          showToast(errorMessage, 'error');
           return;
         }
 

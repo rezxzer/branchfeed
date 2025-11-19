@@ -8,8 +8,13 @@ export async function createServerSupabaseClient() {
   if (!supabaseUrl || !supabaseAnonKey) {
     // Return null or throw error gracefully
     // In development, this allows the app to run without Supabase configured
+    const missingVars = []
+    if (!supabaseUrl) missingVars.push('NEXT_PUBLIC_SUPABASE_URL')
+    if (!supabaseAnonKey) missingVars.push('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    
     console.warn(
-      'Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env file.'
+      `Missing Supabase environment variables in .env.local: ${missingVars.join(', ')}. ` +
+      'Please set these variables in your .env.local file.'
     )
     // Return null instead of null as any to avoid type issues
     return null

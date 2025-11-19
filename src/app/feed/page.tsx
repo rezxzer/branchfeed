@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
+import { redirect } from 'next/navigation'
 import { FeedPageClient } from '@/components/feed/FeedPageClient'
+import { getCurrentUser } from '@/lib/auth'
 import { siteConfig } from '@/config/site'
 
 // Revalidate feed page every 30 seconds
@@ -36,6 +38,12 @@ interface FeedPageProps {
 }
 
 export default async function FeedPage({ searchParams }: FeedPageProps) {
+  // Check authentication - redirect to signin if not authenticated
+  const user = await getCurrentUser()
+  if (!user) {
+    redirect('/signin')
+  }
+
   const params = await searchParams
   return <FeedPageClient tagSlug={params.tag} />
 }

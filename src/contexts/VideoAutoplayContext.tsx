@@ -55,6 +55,10 @@ export function VideoAutoplayProvider({ children }: { children: ReactNode }) {
 
   const releaseAutoplay = useCallback((videoId: string) => {
     setPlayingVideos((prev) => {
+      // Only update if videoId is actually in the set (avoid unnecessary re-renders)
+      if (!prev.has(videoId)) {
+        return prev
+      }
       const next = new Set(prev)
       next.delete(videoId)
       return next

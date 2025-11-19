@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { CollectionCard } from './CollectionCard'
@@ -18,11 +18,7 @@ export function UserCollections({ userId, isOwnProfile = false }: UserCollection
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
-  useEffect(() => {
-    loadCollections()
-  }, [userId])
-
-  const loadCollections = async () => {
+  const loadCollections = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -41,7 +37,11 @@ export function UserCollections({ userId, isOwnProfile = false }: UserCollection
     } finally {
       setLoading(false)
     }
-  }
+  }, [userId, isOwnProfile])
+
+  useEffect(() => {
+    loadCollections()
+  }, [loadCollections])
 
   if (loading) {
     return (

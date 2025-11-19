@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SubscriptionBadge } from '@/components/ui/SubscriptionBadge'
+import { LinkRenderer } from '@/components/ui/LinkRenderer'
 import { FollowButton } from './FollowButton'
 import { UserCollections } from '@/components/collections/UserCollections'
 import type { Profile, Story } from '@/types'
@@ -54,6 +55,7 @@ export function ProfilePageClient({
                     width={80}
                     height={80}
                     className="w-full h-full object-cover"
+                    style={{ width: 'auto', height: 'auto' }}
                     unoptimized
                   />
                 </div>
@@ -74,7 +76,9 @@ export function ProfilePageClient({
                   )}
                 </div>
                 {profile.bio && (
-                  <p className="text-gray-300 text-xs sm:text-sm break-words">{profile.bio}</p>
+                  <p className="text-gray-300 text-xs sm:text-sm break-words">
+                    <LinkRenderer text={profile.bio} showExternalIcon={true} />
+                  </p>
                 )}
               </div>
             </div>

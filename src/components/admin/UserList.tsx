@@ -95,6 +95,7 @@ export function UserList({ users, loading, pagination, onPageChange }: UserListP
                           width={40}
                           height={40}
                           className="w-full h-full object-cover"
+                          style={{ width: 'auto', height: 'auto' }}
                           unoptimized
                         />
                       </div>

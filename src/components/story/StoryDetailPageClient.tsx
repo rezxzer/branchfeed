@@ -17,6 +17,7 @@ import { usePathTracking } from '@/hooks/usePathTracking'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { StoryStatsBar } from './StoryStatsBar'
 import { StoryTags } from './StoryTags'
+import { LinkRenderer } from '@/components/ui/LinkRenderer'
 import { encodePath, decodePath } from '@/lib/pathSharing'
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -25,6 +26,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { EditStoryModal } from './EditStoryModal'
 import { DeleteStoryModal } from './DeleteStoryModal'
 import { Button } from '@/components/ui/Button'
+import { logError } from '@/lib/logger'
 
 // Lazy load non-critical components for code splitting
 const CommentSection = dynamic(() => import('./CommentSection').then(mod => ({ default: mod.CommentSection })), {
@@ -239,7 +241,7 @@ export function StoryDetailPageClient({
           }
         })
         .catch((err) => {
-          console.error('Error incrementing view count:', err)
+          logError('Error incrementing view count', err)
           // Don't update state on error - keep existing value
           // View increment is non-critical, so we silently fail (unless it's a limit error)
         })
@@ -325,7 +327,7 @@ export function StoryDetailPageClient({
         showToast('Removed from your likes', 'info')
       }
     } catch (err: any) {
-      console.error('Error toggling like:', err)
+      logError('Error toggling like', err)
       
       // Check if it's a subscription limit error
       if (err.limitExceeded || err.message?.includes('limit') || err.message?.includes('Limit')) {
@@ -379,7 +381,7 @@ export function StoryDetailPageClient({
 
       showToast('Story exported successfully!', 'success')
     } catch (err: any) {
-      console.error('Error exporting story:', err)
+      logError('Error exporting story', err)
       showToast(err.message || 'Failed to export story', 'error')
     } finally {
       setIsExporting(false)
@@ -408,7 +410,7 @@ export function StoryDetailPageClient({
         router.push('/drafts')
       }, 1500)
     } catch (err: any) {
-      console.error('Error duplicating story:', err)
+      logError('Error duplicating story', err)
       showToast(err.message || 'Failed to duplicate story', 'error')
     } finally {
       setIsDuplicating(false)
@@ -472,6 +474,7 @@ export function StoryDetailPageClient({
                 width={40}
                 height={40}
                 className="rounded-full object-cover flex-shrink-0"
+                style={{ width: 'auto', height: 'auto' }}
                 unoptimized
               />
             ) : (
@@ -549,7 +552,9 @@ export function StoryDetailPageClient({
             </div>
           </div>
           {story.description && (
-            <p className="text-sm sm:text-base text-gray-300 mt-2 break-words">{story.description}</p>
+            <p className="text-sm sm:text-base text-gray-300 mt-2 break-words">
+              <LinkRenderer text={story.description} showExternalIcon={true} />
+            </p>
           )}
           
           {/* Tags */}

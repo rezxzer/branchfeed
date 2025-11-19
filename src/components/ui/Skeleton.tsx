@@ -7,6 +7,8 @@ export interface SkeletonProps {
   variant?: 'default' | 'circular' | 'text'
   width?: string | number
   height?: string | number
+  /** Show shimmer animation (default: true) */
+  shimmer?: boolean
 }
 
 export function Skeleton({
@@ -14,9 +16,10 @@ export function Skeleton({
   variant = 'default',
   width,
   height,
+  shimmer = true,
   ...props
 }: SkeletonProps & React.HTMLAttributes<HTMLDivElement>) {
-  const baseClasses = 'animate-pulse bg-gray-700/50 rounded'
+  const baseClasses = shimmer ? 'animate-pulse bg-gray-700/50 rounded' : 'bg-gray-700/30 rounded'
   
   const variantClasses = {
     default: 'rounded',

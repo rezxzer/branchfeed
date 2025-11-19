@@ -3,6 +3,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react'
 import { ErrorState } from '@/components/ui/ErrorState'
 import { Button } from '@/components/ui/Button'
+import { logError } from '@/lib/logger'
 
 interface Props {
   children: ReactNode
@@ -42,21 +43,36 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo)
+      logError('ErrorBoundary caught an error', error, {
+        componentStack: errorInfo.componentStack,
+      })
+    }
+
+    // Safely handle errorInfo to prevent serialization issues
+    const safeErrorInfo: ErrorInfo = {
+      componentStack: typeof errorInfo.componentStack === 'string' 
+        ? errorInfo.componentStack 
+        : String(errorInfo.componentStack || ''),
     }
 
     // Update state with error info
     this.setState({
       error,
-      errorInfo,
+      errorInfo: safeErrorInfo,
     })
 
     // Call optional error handler
     if (this.props.onError) {
-      this.props.onError(error, errorInfo)
+      try {
+        this.props.onError(error, safeErrorInfo)
+      } catch (handlerError) {
+        // Prevent error handler from causing infinite loops
+        logError('Error in error handler', handlerError)
+      }
     }
 
-    // TODO: Log to error reporting service (e.g., Sentry) in production
+    // Log to error reporting service (e.g., Sentry) in production
+    // Currently using logger utility - can be extended to send to external service
   }
 
   handleReset = () => {
@@ -99,9 +115,11 @@ export class ErrorBoundary extends Component<Props, State> {
                     Error Details (Development Only)
                   </summary>
                   <pre className="text-xs text-red-400 overflow-auto max-h-96 mt-2">
-                    {this.state.error?.stack}
+                    {this.state.error?.stack || String(this.state.error)}
                     {'\n\n'}
-                    {this.state.errorInfo.componentStack}
+                    {typeof this.state.errorInfo.componentStack === 'string' 
+                      ? this.state.errorInfo.componentStack 
+                      : String(this.state.errorInfo.componentStack || '')}
                   </pre>
                 </details>
               </div>

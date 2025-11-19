@@ -7,7 +7,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
@@ -27,11 +27,7 @@ export function SubscriptionSettings({ userId }: SubscriptionSettingsProps) {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchSubscription();
-  }, [userId]);
-
-  const fetchSubscription = async () => {
+  const fetchSubscription = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/subscriptions/current');
@@ -48,7 +44,11 @@ export function SubscriptionSettings({ userId }: SubscriptionSettingsProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    fetchSubscription();
+  }, [fetchSubscription]);
 
   const handleSubscribe = async (tier: SubscriptionTier) => {
     try {

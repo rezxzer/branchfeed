@@ -162,3 +162,110 @@ export async function GET(
   }
 }
 
+/**
+ * POST /api/stories/[id]/analytics
+ * 
+ * Record video view analytics (duration, events, etc.)
+ * Requires authentication
+ */
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const supabase = await createServerSupabaseClient()
+    
+    if (!supabase) {
+      return NextResponse.json(
+        { error: 'Service unavailable' },
+        { status: 503 }
+      )
+    }
+
+    // Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const { id: storyId } = await params
+    const body = await request.json()
+
+    const {
+      videoId,
+      startTime,
+      endTime,
+      totalDuration,
+      watchPercentage,
+      completed,
+      events,
+    } = body
+
+    // Validate required fields
+    if (!videoId || !startTime || !totalDuration) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Verify story exists
+    const { data: story, error: storyError } = await supabase
+      .from('stories')
+      .select('id')
+      .eq('id', storyId)
+      .single()
+
+    if (storyError || !story) {
+      return NextResponse.json(
+        { error: 'Story not found' },
+        { status: 404 }
+      )
+    }
+
+    // Store analytics in database (if video_analytics table exists)
+    // For now, we'll log it and can add database storage later
+    console.log('Video analytics received:', {
+      storyId,
+      userId: user.id,
+      videoId,
+      startTime,
+      endTime,
+      totalDuration,
+      watchPercentage,
+      completed,
+      eventsCount: events?.length || 0,
+    })
+
+    // TODO: Store in video_analytics table when schema is ready
+    // const { error: insertError } = await supabase
+    //   .from('video_analytics')
+    //   .insert({
+    //     story_id: storyId,
+    //     user_id: user.id,
+    //     video_id: videoId,
+    //     start_time: new Date(startTime).toISOString(),
+    //     end_time: endTime ? new Date(endTime).toISOString() : null,
+    //     total_duration: totalDuration,
+    //     watch_percentage: watchPercentage,
+    //     completed,
+    //     events: events || [],
+    //   })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Analytics recorded',
+    })
+  } catch (error: any) {
+    console.error('Error in POST /api/stories/[id]/analytics:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+

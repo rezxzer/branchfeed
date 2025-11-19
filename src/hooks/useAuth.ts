@@ -32,26 +32,33 @@ export function useAuth(): UseAuthReturn {
       return
     }
 
+    let mounted = true
+    let subscription: { unsubscribe: () => void } | null = null
+
     try {
       const supabase = createClientClient()
 
       // Get initial session
       supabase.auth.getSession().then(({ data: { session } }: { data: { session: Session | null } }) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
+        // Only update state if component is still mounted
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
       })
 
       // Listen for auth changes
       const {
-        data: { subscription },
+        data: { subscription: authSubscription },
       } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-        setUser(session?.user ?? null)
-        setLoading(false)
+        // Only update state if component is still mounted
+        if (mounted) {
+          setUser(session?.user ?? null)
+          setLoading(false)
+        }
       })
 
-      return () => {
-        subscription.unsubscribe()
-      }
+      subscription = authSubscription
     } catch (error) {
       // Graceful degradation: if Supabase is not configured, just log and continue
       if (error instanceof Error && error.message.includes('Supabase')) {
@@ -62,7 +69,16 @@ export function useAuth(): UseAuthReturn {
       } else {
         console.error('Error initializing auth:', error)
       }
-      setLoading(false)
+      if (mounted) {
+        setLoading(false)
+      }
+    }
+
+    return () => {
+      mounted = false
+      if (subscription) {
+        subscription.unsubscribe()
+      }
     }
   }, [])
 

@@ -10,7 +10,7 @@ export function createClientClient() {
     // In development, return a mock client that fails gracefully
     // This prevents runtime errors when env vars are not set
     console.warn(
-      'Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env file.'
+      'Missing Supabase environment variables. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in your .env.local file.'
     )
     // Return a minimal mock client that will fail gracefully on use
     const mockQuery = {
@@ -47,7 +47,7 @@ export function createClientClient() {
     if (supabaseUrl.startsWith('eyJ') && supabaseUrl.length > 100) {
       throw new Error(
         `It looks like NEXT_PUBLIC_SUPABASE_URL contains a JWT token instead of a URL. ` +
-          `Please check your .env file - you may have swapped NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. ` +
+          `Please check your .env.local file - you may have swapped NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY. ` +
           `URL should start with https:// (e.g., https://your-project-id.supabase.co)`
       )
     }
@@ -69,7 +69,7 @@ export function createClientClient() {
       throw new Error(
         `Invalid NEXT_PUBLIC_SUPABASE_URL format: "${supabaseUrl.substring(0, 50)}...". ` +
           `Must be a valid HTTP or HTTPS URL (e.g., https://your-project-id.supabase.co). ` +
-          `If you see a JWT token here, you may have swapped URL and ANON_KEY in your .env file.`
+          `If you see a JWT token here, you may have swapped URL and ANON_KEY in your .env.local file.`
       )
     }
     throw error

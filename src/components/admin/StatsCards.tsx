@@ -7,6 +7,7 @@
 'use client';
 
 import type { AdminStats } from '@/types/admin';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface StatsCardsProps {
   stats: AdminStats;
@@ -14,39 +15,41 @@ interface StatsCardsProps {
 }
 
 export function StatsCards({ stats, loading = false }: StatsCardsProps) {
+  const { t } = useTranslation();
+
   const cards = [
     {
-      title: 'Total Users',
+      title: t('admin.stats.totalUsers'),
       value: stats.totalUsers,
       icon: '👥',
       color: 'blue',
     },
     {
-      title: 'Active Users (24h)',
+      title: t('admin.stats.activeUsers'),
       value: stats.activeUsers,
       icon: '🟢',
       color: 'green',
     },
     {
-      title: 'Total Stories',
+      title: t('admin.stats.totalStories'),
       value: stats.totalStories,
       icon: '📖',
       color: 'purple',
     },
     {
-      title: 'Total Posts',
+      title: t('admin.stats.totalPosts'),
       value: stats.totalPosts,
       icon: '📝',
       color: 'indigo',
     },
     {
-      title: 'Total Likes',
+      title: t('admin.stats.totalLikes'),
       value: stats.totalLikes,
       icon: '❤️',
       color: 'pink',
     },
     {
-      title: 'Total Views',
+      title: t('admin.stats.totalViews'),
       value: stats.totalViews,
       icon: '👁️',
       color: 'orange',

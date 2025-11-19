@@ -48,7 +48,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           variant === 'secondary' &&
             'bg-gradient-vip text-white hover:opacity-90 shadow-sm hover:shadow-md transition-all ease-bounce-soft',
           variant === 'outline' &&
-            'bg-transparent text-white border-2 border-white/80 hover:bg-white/10 hover:border-white hover:text-white transition-all ease-smooth shadow-sm',
+            'bg-transparent text-gray-200 border-2 border-gray-600 hover:bg-gray-800/50 hover:border-gray-500 hover:text-white transition-all ease-smooth shadow-sm',
           variant === 'ghost' &&
             'bg-transparent text-gray-700 hover:bg-gray-100',
           variant === 'danger' &&

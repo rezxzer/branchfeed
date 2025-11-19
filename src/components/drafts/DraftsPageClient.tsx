@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useToast } from '@/components/ui/toast'
+import { logError } from '@/lib/logger'
 import { createClientClient } from '@/lib/supabase/client'
 import type { Story } from '@/types'
 
@@ -86,7 +87,7 @@ export function DraftsPageClient() {
 
       setHasMore(pageNum < Math.ceil((count || 0) / limit))
     } catch (err) {
-      console.error('Error loading drafts:', err)
+      logError('Error loading drafts', err)
       setError(err as Error)
     } finally {
       setLoading(false)
@@ -123,7 +124,7 @@ export function DraftsPageClient() {
       setStories((prev) => prev.filter((s) => s.id !== storyId))
       showToast('Story published successfully!', 'success')
     } catch (err) {
-      console.error('Error publishing story:', err)
+      logError('Error publishing story', err)
       showToast('Failed to publish story', 'error')
     }
   }
@@ -148,7 +149,7 @@ export function DraftsPageClient() {
       // Reload drafts to show the new duplicate
       loadDrafts(1)
     } catch (err: any) {
-      console.error('Error duplicating story:', err)
+      logError('Error duplicating story', err)
       showToast(err.message || 'Failed to duplicate story', 'error')
     } finally {
       setDuplicatingStoryId(null)

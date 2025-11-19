@@ -97,10 +97,22 @@ export function ShareStoryButton({
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      e.stopPropagation()
+      if (!loading && !isCopying) {
+        handleShare(e as any)
+      }
+    }
+  }
+
   return (
     <button
       onClick={handleShare}
+      onKeyDown={handleKeyDown}
       disabled={loading || isCopying}
+      tabIndex={0}
       className={cn(
         'inline-flex items-center gap-2 rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-100 hover:bg-slate-800 transition-colors ease-smooth',
         'disabled:opacity-50 disabled:cursor-not-allowed',

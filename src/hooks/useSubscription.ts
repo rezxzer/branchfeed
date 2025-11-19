@@ -4,7 +4,7 @@
  * Hook for managing user subscription state and actions.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './useAuth';
 import type { UserSubscription } from '@/types/subscription';
 
@@ -23,7 +23,7 @@ export function useSubscription(): UseSubscriptionReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const fetchSubscription = async () => {
+  const fetchSubscription = useCallback(async () => {
     if (!user) {
       setSubscription(null);
       setLoading(false);
@@ -48,11 +48,11 @@ export function useSubscription(): UseSubscriptionReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchSubscription();
-  }, [user?.id]);
+  }, [fetchSubscription]);
 
   const isActive = subscription?.status === 'active';
   const tier = subscription?.tier || null;

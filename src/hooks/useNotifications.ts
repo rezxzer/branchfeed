@@ -71,6 +71,7 @@ export function useNotifications(): UseNotificationsResult {
 
   const fetchUnreadCount = useCallback(async () => {
     if (!isAuthenticated) {
+      setUnreadCount(0)
       return
     }
 
@@ -78,13 +79,16 @@ export function useNotifications(): UseNotificationsResult {
       const response = await fetch('/api/notifications/unread-count')
       
       if (!response.ok) {
-        throw new Error('Failed to fetch unread count')
+        // If service unavailable or other error, set count to 0 silently
+        setUnreadCount(0)
+        return
       }
 
       const data = await response.json()
       setUnreadCount(data.count || 0)
     } catch (err) {
-      console.error('Error fetching unread count:', err)
+      // Silently handle errors - set count to 0
+      setUnreadCount(0)
     }
   }, [isAuthenticated])
 
@@ -100,7 +104,8 @@ export function useNotifications(): UseNotificationsResult {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to mark notification as read')
+        // Silently handle errors - don't update state if request failed
+        return
       }
 
       // Update local state
@@ -109,8 +114,7 @@ export function useNotifications(): UseNotificationsResult {
       )
       setUnreadCount((prev) => Math.max(0, prev - 1))
     } catch (err) {
-      console.error('Error marking notification as read:', err)
-      throw err
+      // Silently handle errors
     }
   }, [])
 
@@ -121,15 +125,15 @@ export function useNotifications(): UseNotificationsResult {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to mark all notifications as read')
+        // Silently handle errors - don't update state if request failed
+        return
       }
 
       // Update local state
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
       setUnreadCount(0)
     } catch (err) {
-      console.error('Error marking all notifications as read:', err)
-      throw err
+      // Silently handle errors
     }
   }, [])
 

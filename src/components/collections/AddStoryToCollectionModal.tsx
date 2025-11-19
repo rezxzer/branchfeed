@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Spinner } from '@/components/ui/Spinner'
@@ -25,15 +25,7 @@ export function AddStoryToCollectionModal({
   const [addingStoryId, setAddingStoryId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (searchQuery.trim().length >= 2) {
-      searchStories()
-    } else {
-      setStories([])
-    }
-  }, [searchQuery])
-
-  const searchStories = async () => {
+  const searchStories = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -56,7 +48,15 @@ export function AddStoryToCollectionModal({
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchQuery, existingStoryIds])
+
+  useEffect(() => {
+    if (searchQuery.trim().length >= 2) {
+      searchStories()
+    } else {
+      setStories([])
+    }
+  }, [searchQuery, searchStories])
 
   const handleAddStory = async (storyId: string) => {
     setAddingStoryId(storyId)

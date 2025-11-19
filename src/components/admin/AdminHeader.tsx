@@ -8,10 +8,12 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function AdminHeader() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleSignOut = async () => {
     await signOut();
@@ -23,7 +25,7 @@ export function AdminHeader() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h1 className="text-2xl font-bold text-white">
-            Admin Dashboard
+            {t('admin.dashboard.title')}
           </h1>
         </div>
         <div className="flex items-center gap-4">
@@ -32,7 +34,7 @@ export function AdminHeader() {
             onClick={handleSignOut}
             className="px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
           >
-            Logout
+            {t('admin.logout')}
           </button>
         </div>
       </div>
