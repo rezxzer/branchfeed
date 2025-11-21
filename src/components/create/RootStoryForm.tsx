@@ -6,6 +6,13 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { Input } from '@/components/ui/Input'
 import { Textarea } from '@/components/ui/Textarea'
 import { Button } from '@/components/ui/Button'
+import { MediaUploadRules } from './MediaUploadRules'
+import { 
+  detectMediaType, 
+  getFileValidationError, 
+  formatFileSize,
+  MEDIA_SIZE_LIMITS 
+} from '@/config/media'
 import type { RootStoryData } from '@/types/create'
 
 interface RootStoryFormProps {
@@ -49,46 +56,42 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
       name: file.name,
       type: file.type,
       size: file.size,
-      sizeMB: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+      sizeMB: formatFileSize(file.size),
     })
 
     // Clear previous errors
     setErrors({ ...errors, media: '' })
 
-    // Detect if file is video or image
-    const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|avi|mkv)$/i.test(file.name)
-    const isImage = file.type.startsWith('image/') || /\.(jpg|jpeg|png|webp|gif)$/i.test(file.name)
+    // Detect media type using config function
+    const detectedType = detectMediaType(file)
     
     console.log('🔍 File type detection:', {
-      isVideo,
-      isImage,
+      detectedType,
       fileType: file.type,
       fileName: file.name,
     })
     
-    if (!isVideo && !isImage) {
+    if (detectedType === 'unknown') {
       console.error('❌ Invalid file type:', file.type, file.name)
       setErrors({ 
-        media: t('createStory.errors.invalidFileType') || 'Please upload an image (JPEG, PNG, WebP, GIF) or video (MP4, WebM, MOV, AVI) file.' 
+        media: t('createStory.errors.invalidFileType') || 
+        'Invalid file type. Please upload an image (JPEG, PNG, WebP, GIF) or video (MP4, WebM, MOV, AVI) file.' 
       })
       return
     }
 
-    // File size validation
-    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024 // 50MB for videos, 10MB for images
+    // Validate file using config function
+    const validationError = getFileValidationError(file, detectedType)
     
-    if (file.size > maxSize) {
-      console.error('❌ File too large:', file.size, 'max:', maxSize)
-      setErrors({ 
-        media: t('createStory.errors.fileTooLarge') || `File size must be less than ${isVideo ? '50' : '10'}MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB` 
-      })
+    if (validationError) {
+      console.error('❌ File validation failed:', validationError)
+      setErrors({ media: validationError })
       return
     }
     
-    // Set media type immediately (synchronous) to ensure it's available when submitting
-    const detectedMediaType = isVideo ? 'video' : 'image'
-    console.log('✅ Setting media type:', detectedMediaType)
-    setMediaType(detectedMediaType)
+    // Set media type
+    console.log('✅ Setting media type:', detectedType)
+    setMediaType(detectedType)
     
     // Set media file - this will trigger preview in useEffect
     setMedia(file)
@@ -158,22 +161,28 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
 
         {/* Media Upload */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-3">
             {t('createStory.root.media')} <span className="text-error ml-1">*</span>
           </label>
+          
+          {/* Upload Rules - Expandable */}
+          <MediaUploadRules 
+            type={mediaType || 'video'} 
+            className="mb-4"
+          />
           
           {/* Separate inputs for image and video */}
           <input
             id="story-media-image"
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
             onChange={handleFileChange}
             className="hidden"
           />
           <input
             id="story-media-video"
             type="file"
-            accept="video/*"
+            accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,.mp4,.webm,.mov,.avi"
             onChange={handleFileChange}
             className="hidden"
           />
@@ -206,44 +215,93 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
             </label>
           </div>
           
-          {/* Selected file info */}
+          {/* Selected file info with size indicator */}
           {media && (
-            <div className="mt-3 flex items-center gap-2 px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-700/50">
-              <span className="text-sm text-gray-300">
-                {mediaType === 'video' ? '📹' : '🖼️'} {media.name}
-              </span>
-              <span className="text-xs text-gray-500">
-                ({(media.size / 1024 / 1024).toFixed(2)} MB)
-              </span>
-              <button
-                type="button"
-                onClick={() => {
-                  setMedia(null)
-                  setMediaPreview(null)
-                  setMediaType(undefined)
-                  setErrors({ ...errors, media: '' })
-                  // Reset file inputs
-                  const imageInput = document.getElementById('story-media-image') as HTMLInputElement
-                  const videoInput = document.getElementById('story-media-video') as HTMLInputElement
-                  if (imageInput) imageInput.value = ''
-                  if (videoInput) videoInput.value = ''
-                }}
-                className="ml-auto text-xs text-error hover:text-error/80 transition-colors"
-              >
-                ✕ Remove
-              </button>
+            <div className="mt-3 space-y-2">
+              {/* File info */}
+              <div className="flex items-center gap-2 px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-700/50">
+                <span className="text-sm text-gray-300">
+                  {mediaType === 'video' ? '📹' : '🖼️'} {media.name}
+                </span>
+                <span className="text-xs text-gray-500">
+                  ({formatFileSize(media.size)})
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMedia(null)
+                    setMediaPreview(null)
+                    setMediaType(undefined)
+                    setErrors({ ...errors, media: '' })
+                    // Reset file inputs
+                    const imageInput = document.getElementById('story-media-image') as HTMLInputElement
+                    const videoInput = document.getElementById('story-media-video') as HTMLInputElement
+                    if (imageInput) imageInput.value = ''
+                    if (videoInput) videoInput.value = ''
+                  }}
+                  className="ml-auto text-xs text-error hover:text-error/80 transition-colors"
+                >
+                  ✕ Remove
+                </button>
+              </div>
+              
+              {/* Size indicator bar */}
+              {mediaType && (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400">File size:</span>
+                    <span className={
+                      media.size > MEDIA_SIZE_LIMITS[mediaType].recommended
+                        ? 'text-yellow-400'
+                        : 'text-brand-cyan'
+                    }>
+                      {formatFileSize(media.size)} / {MEDIA_SIZE_LIMITS[mediaType].maxMB} MB
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all ${
+                        media.size > MEDIA_SIZE_LIMITS[mediaType].recommended
+                          ? 'bg-yellow-400'
+                          : 'bg-brand-cyan'
+                      }`}
+                      style={{ 
+                        width: `${Math.min((media.size / MEDIA_SIZE_LIMITS[mediaType].max) * 100, 100)}%` 
+                      }}
+                    />
+                  </div>
+                  {media.size > MEDIA_SIZE_LIMITS[mediaType].recommended && (
+                    <p className="text-xs text-yellow-400 flex items-center gap-1">
+                      <span>⚠️</span>
+                      <span>Large file size. Consider compressing for faster upload.</span>
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
           
-          <p className="mt-2 text-xs text-gray-400">
-            Supported formats: Images (JPEG, PNG, WebP, GIF) or Videos (MP4, WebM, MOV, AVI). Max size: 10MB (images) / 50MB (videos)
-          </p>
-          <p className="mt-1 text-xs text-yellow-400">
-            💡 Tip: If video files don&apos;t appear, change the file type filter dropdown to &quot;All Files (*.*)&quot; in the file picker
-          </p>
+          {/* Error message */}
           {errors.media && (
-            <p className="mt-2 text-sm text-error">{errors.media}</p>
+            <div className="mt-3 p-3 bg-error/10 border border-error/50 rounded-lg">
+              <p className="text-sm text-error flex items-center gap-2">
+                <span>❌</span>
+                <span>{errors.media}</span>
+              </p>
+            </div>
           )}
+          
+          {/* Quick tips */}
+          <div className="mt-3 text-xs text-gray-400 space-y-1">
+            <p className="flex items-center gap-1">
+              <span className="text-brand-cyan">💡</span>
+              <span>Tip: Use vertical (9:16) format for best mobile experience</span>
+            </p>
+            <p className="flex items-center gap-1">
+              <span className="text-brand-cyan">💡</span>
+              <span>Videos: Keep under {MEDIA_SIZE_LIMITS.video.recommendedMB}MB and 30-60 seconds for best results</span>
+            </p>
+          </div>
         </div>
 
         {/* Media Preview */}
