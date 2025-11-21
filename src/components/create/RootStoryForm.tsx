@@ -119,7 +119,7 @@ export function RootStoryForm({ onSubmit, initialData }: RootStoryFormProps) {
       description: description.trim() || undefined,
       media,
       mediaUrl: mediaPreview || undefined,
-      mediaType,
+      mediaType: mediaType as 'image' | 'video' | undefined,
     })
   }
 
