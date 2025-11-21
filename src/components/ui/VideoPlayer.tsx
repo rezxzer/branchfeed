@@ -271,6 +271,21 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
           </div>
         )}
 
+        {/* Muted Indicator (shows when video is muted and playing) */}
+        {isMuted && isPlaying && (
+          <div className="absolute top-4 left-4 z-30 animate-fade-in">
+            <button
+              onClick={handleMuteToggle}
+              className="flex items-center gap-2 px-3 py-2 bg-black/80 backdrop-blur-sm rounded-lg shadow-lg hover:bg-black/90 transition-all"
+            >
+              <VolumeX className="w-4 h-4 text-white" />
+              <span className="text-white text-xs font-medium">
+                Click to unmute
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* Custom Controls Overlay */}
         {controls && !isLoading && !hasError && (
           <div
@@ -279,16 +294,16 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
               showControls ? 'opacity-100' : 'opacity-0 pointer-events-none'
             )}
           >
-            {/* Play/Pause Button (center) */}
-            <button
-              onClick={handlePlayPause}
-              className="w-16 h-16 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm flex items-center justify-center transition-all ease-smooth"
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-            >
-              {!isPlaying && (
+            {/* Play/Pause Button (center) - only show when paused */}
+            {!isPlaying && (
+              <button
+                onClick={handlePlayPause}
+                className="w-16 h-16 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-sm flex items-center justify-center transition-all ease-smooth"
+                aria-label="Play"
+              >
                 <Play className="w-8 h-8 text-white ml-1" fill="white" />
-              )}
-            </button>
+              </button>
+            )}
 
             {/* Bottom Controls Bar */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
@@ -296,8 +311,14 @@ export const VideoPlayer = forwardRef<HTMLVideoElement, VideoPlayerProps>(
                 {/* Mute/Unmute Button */}
                 <button
                   onClick={handleMuteToggle}
-                  className="p-2 rounded-lg bg-black/40 hover:bg-black/60 transition-colors"
+                  className={cn(
+                    "p-2 rounded-lg transition-colors",
+                    isMuted 
+                      ? "bg-error/60 hover:bg-error/80" 
+                      : "bg-black/40 hover:bg-black/60"
+                  )}
                   aria-label={isMuted ? 'Unmute' : 'Mute'}
+                  title={isMuted ? 'Click to unmute' : 'Click to mute'}
                 >
                   {isMuted ? (
                     <VolumeX className="w-5 h-5 text-white" />

@@ -83,7 +83,7 @@ export function StoryPlayer({
         controls={true}
         autoPlay={mediaType === 'video'}
         loop={false}
-        muted={undefined} // Let VideoPlayer decide (auto-mute if autoplay)
+        muted={mediaType === 'video'} // Auto-mute videos for autoplay
         poster={posterUrl ?? undefined}
         lazy={false}
         maxWidth="w-full"
